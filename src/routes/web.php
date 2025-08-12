@@ -15,3 +15,4 @@ use App\Http\Controllers\AuthController;
 */
 
 Route::post('/register', [AuthController::class, 'register'])->name('register.perform');
+Route::post('/login', [AuthController::class, 'login'])->name('login');

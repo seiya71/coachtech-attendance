@@ -24,4 +24,15 @@ class AuthController extends Controller
 
         return redirect()->route('verification.verify');
     }
+
+    public function login(LoginRequest $request)
+    {
+
+        if (Auth::attempt($request->only('email', 'password'))) {
+            $request->session()->regenerate();
+            return redirect()->intended(route('home'));
+        }
+
+        return back()->withErrors(['email' => 'メールまたはパスワードが正しくありません'])->onlyInput('email');
+    }
 }
