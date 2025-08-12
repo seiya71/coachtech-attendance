@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -23,5 +24,16 @@ class AuthController extends Controller
         session()->regenerate();
 
         return redirect()->route('verification.verify');
+    }
+
+    public function login(LoginRequest $request)
+    {
+
+        if (Auth::attempt($request->only('email', 'password'))) {
+            $request->session()->regenerate();
+            return redirect()->intended(route('home'));
+        }
+
+        return back()->withErrors(['email' => 'ログイン情報が登録されていません'])->onlyInput('email');
     }
 }
