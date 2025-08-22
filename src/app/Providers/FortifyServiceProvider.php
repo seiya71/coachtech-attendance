@@ -12,7 +12,9 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
-
+use Laravel\Fortify\Features;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Notifications\Messages\MailMessage;
 class FortifyServiceProvider extends ServiceProvider
 {
     /**
@@ -44,6 +46,21 @@ class FortifyServiceProvider extends ServiceProvider
 
         RateLimiter::for('two-factor', function (Request $request) {
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
+        });
+
+        config([
+            'fortify.features' => array_unique(array_filter([
+                Features::emailVerification(),
+                
+            ]))
+        ]);
+        VerifyEmail::toMailUsing(function ($notifiable, string $url) {
+            return (new MailMessage)
+                ->subject('【' . config('app.name') . '】メールアドレスの確認')
+                ->greeting($notifiable->name . ' さん、ようこそ！')
+                ->line('アカウントを有効化するには、下のボタンをクリックしてください。')
+                ->action('メールアドレスを認証', $url)
+                ->line('このリンクは一定時間で失効します。心当たりがない場合は破棄してください。');
         });
     }
 }

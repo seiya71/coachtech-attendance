@@ -20,10 +20,11 @@ class AuthController extends Controller
             'role' => 'user',
         ]);
 
+        event(new Registered($user));
         Auth::login($user);
         session()->regenerate();
 
-        return redirect()->route('verification.verify');
+        return redirect()->route('verification.notice');
     }
 
     public function login(LoginRequest $request)
