@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,3 +18,20 @@ use App\Http\Controllers\AuthController;
 
 Route::post('/register', [AuthController::class, 'register'])->name('register.perform');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::middleware('auth')->group(function () {
+    // 誘導画面
+    Route::get('/email/verify', fn() => view('auth.verify-email'))
+        ->name('verification.notice');
+
+    // メール内リンク（検証完了）
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect()->route('home')->with('status', 'verified');
+    })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+
+    // 再送
+    Route::post('/email/verification-notification', function (Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('status', 'verification-link-sent');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+});
