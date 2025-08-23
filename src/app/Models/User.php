@@ -45,6 +45,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
+    use HasFactory;
+
     public function attendances()
     {
         return $this->hasMany(Attendance::class);
