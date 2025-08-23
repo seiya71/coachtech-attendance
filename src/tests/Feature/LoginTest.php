@@ -69,4 +69,21 @@ class LoginTest extends TestCase
         ]);
     }
 
+    /** @test */
+    public function 登録内容と一致する場合、ログインできる()
+    {
+        $user = User::factory()->create([
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'test@example.com',
+            'password' => 'password123',
+        ]);
+
+        $response->assertRedirect('/attendance');
+
+        $this->assertAuthenticatedAs($user);
+    }
 }
