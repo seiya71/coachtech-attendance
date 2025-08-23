@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class VerifyEmailTest extends TestCase
@@ -36,5 +38,20 @@ class VerifyEmailTest extends TestCase
         $user = User::whereEmail('verify_target@example.com')->firstOrFail();
 
         Notification::assertSentTo($user, VerifyEmail::class);
+    }
+
+    /** @test */
+    public function メール認証誘導画面で「認証はこちらから」ボタンを押下するとメール認証サイトに遷移する()
+    {
+        config()->set('webmail.override', 'https://mailtrap.io/');
+
+        $user = \App\Models\User::factory()->unverified()->create([
+            'email' => 'foo@example.com',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('verification.notice'))
+            ->assertOk()
+            ->assertSee('https://mailtrap.io/');
     }
 }
