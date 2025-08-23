@@ -32,4 +32,22 @@ class LoginTest extends TestCase
             'email' => 'メールアドレスを入力してください',
         ]);
     }
+
+    /** @test */
+    public function パスワードが未入力の場合、バリデーションメッセージが表示される()
+    {
+        User::factory()->create([
+            'email' => 'test@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'test@example.com',
+            'password' => '',
+        ]);
+
+        $response->assertSessionHasErrors([
+            'password' => 'パスワードを入力してください',
+        ]);
+    }
 }
