@@ -54,4 +54,24 @@ class VerifyEmailTest extends TestCase
             ->assertOk()
             ->assertSee('https://mailtrap.io/');
     }
+
+    /** @test */
+    public function メール認証サイトのメール認証を完了すると、勤怠登録画面に遷移する()
+    {
+        $user = User::factory()->unverified()->create();
+
+        $this->actingAs($user);
+
+        $url = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(Config::get('auth.verification.expire', 60)),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        $response = $this->get($url);
+
+        $response->assertRedirect(route('home'));
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+    }
 }
