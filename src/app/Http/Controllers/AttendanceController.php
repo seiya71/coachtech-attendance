@@ -10,4 +10,9 @@ class AttendanceController extends Controller
     {
         return view('attendance');
     }
+
+    public function status()
+    {
+        
+    }
 }
