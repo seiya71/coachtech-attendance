@@ -44,17 +44,18 @@ Route::get('/', [AttendanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('home');
 
-Route::middleware('auth')->prefix('me')->group(function () {
-    Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn'])
-        ->name('me.attendance.clock_in');
-});
-
-Route::middleware('auth')->prefix('me')->group(function () {
-    Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut'])
-        ->name('me.attendance.clock_out');
-});
-
-Route::middleware('auth')->prefix('me')->group(function () {
-    Route::post('/attendance/break-in', [AttendanceController::class, 'startBreak'])
-        ->name('me.attendance.break_in');
-});
+Route::middleware('auth')
+    ->prefix('me/attendance')
+    ->name('me.attendance.')
+    ->controller(AttendanceController::class)
+    ->group(function () {
+        // 画面や状態API（必要なら）
+        Route::get('/', 'index')->name('index');                 // /me/attendance
+        Route::get('/status', 'statusToday')->name('status');    // /me/attendance/status
+    
+        // 打刻系
+        Route::post('/clock-in', 'clockIn')->name('clock_in');  // /me/attendance/clock-in
+        Route::post('/clock-out', 'clockOut')->name('clock_out');// /me/attendance/clock-out
+        Route::post('/break-in', 'startBreak')->name('break_in');// /me/attendance/break-in
+        Route::post('/break-out', 'finishBreak')->name('break_out');// /me/attendance/break-out
+    });
