@@ -45,11 +45,16 @@ Route::get('/', [AttendanceController::class, 'index'])
     ->name('home');
 
 Route::middleware('auth')->prefix('me')->group(function () {
-    Route::post('/attendance/clock-in', [\App\Http\Controllers\ClockController::class, 'clockIn'])
+    Route::post('/attendance/clock-in', [AttendanceController::class, 'clockIn'])
         ->name('me.attendance.clock_in');
 });
 
 Route::middleware('auth')->prefix('me')->group(function () {
-    Route::post('/attendance/clock-out', [\App\Http\Controllers\ClockController::class, 'clockOut'])
+    Route::post('/attendance/clock-out', [AttendanceController::class, 'clockOut'])
         ->name('me.attendance.clock_out');
+});
+
+Route::middleware('auth')->prefix('me')->group(function () {
+    Route::post('/attendance/break-in', [AttendanceController::class, 'startBreak'])
+        ->name('me.attendance.break_in');
 });

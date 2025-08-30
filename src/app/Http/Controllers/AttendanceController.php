@@ -193,4 +193,62 @@ class AttendanceController extends Controller
             ->route('me.attendance.show', ['attendance' => $attendanceForToday->id])
             ->with('ok', '退勤を記録しました。お疲れさまでした！');
     }
+
+    public function startBreak(Request $request)
+    {
+        $authenticatedUser = $request->user();
+        $nowJst = now(self::TZ);
+        $workDate = $nowJst->toDateString();
+
+        try {
+            $attendanceForToday = DB::transaction(function () use ($authenticatedUser, $workDate, $nowJst) {
+                // 当日の勤怠をロックして取得（休憩も一緒に）
+                $attendance = Attendance::with('breaks')
+                    ->where('user_id', $authenticatedUser->id)
+                    ->whereDate('work_date', $workDate)
+                    ->lockForUpdate()
+                    ->first();
+
+                // 勤務中判定
+                if (!$attendance || $attendance->clock_in === null) {
+                    abort(409, '本日の出勤記録がありません。');
+                }
+                if ($attendance->clock_out !== null) {
+                    abort(409, '本日の業務は終了しています。');
+                }
+
+                // すでに休憩中か？
+                $isOnBreakNow = $attendance->breaks->contains(
+                    fn($breakRecord) => $breakRecord->started_at !== null && $breakRecord->ended_at === null
+                );
+                if ($isOnBreakNow) {
+                    abort(409, 'すでに休憩中です。先に休憩戻りを入力してください。');
+                }
+
+                // 出勤より前の時刻になるのを防止（通常は now() なので問題なしだが念のため）
+                if ($attendance->clock_in->gt($nowJst)) {
+                    abort(422, '休憩入り時刻が出勤時刻よりも前です。');
+                }
+
+                // 休憩レコード作成
+                $attendance->breaks()->create([
+                    'started_at' => $nowJst,
+                    'ended_at' => null,
+                ]);
+
+                return $attendance;
+            });
+
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $httpException) {
+            $status = $httpException->getStatusCode();
+            if (in_array($status, [409, 422], true)) {
+                return back()->withErrors(['break_in' => $httpException->getMessage()]);
+            }
+            throw $httpException;
+        }
+
+        return redirect()
+            ->route('me.attendance.show', ['attendance' => $attendanceForToday->id])
+            ->with('ok', '休憩入りを記録しました。');
+    }
 }
