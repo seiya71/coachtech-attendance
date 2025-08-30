@@ -7,6 +7,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Attendance;
 use App\Models\BreakTime;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
@@ -85,5 +86,52 @@ class AttendanceController extends Controller
     public function index()
     {
         return view('attendance');
+    }
+
+    private const TZ = 'Asia/Tokyo';
+
+    public function clockIn(Request $request)
+    {
+        $authenticatedUser = $request->user();
+        $nowJst = now(self::TZ);
+        $workDate = $nowJst->toDateString();
+
+        try {
+            $attendanceForToday = DB::transaction(function () use ($authenticatedUser, $workDate, $nowJst) {
+                // 当日の勤怠をロックして取得（連打・多重リクエスト対策）
+                $existingAttendance = Attendance::where('user_id', $authenticatedUser->id)
+                    ->whereDate('work_date', $workDate)
+                    ->lockForUpdate()
+                    ->first();
+
+                $isCurrentlyWorking = $existingAttendance
+                    && $existingAttendance->clock_in !== null
+                    && $existingAttendance->clock_out === null;
+
+                if ($isCurrentlyWorking) {
+                    abort(409, 'すでに出勤済です。');
+                }
+
+                $attendance = $existingAttendance ?? new Attendance([
+                    'user_id' => $authenticatedUser->id,
+                    'work_date' => $workDate,
+                ]);
+
+                $attendance->clock_in = $nowJst;
+                $attendance->save();
+
+                return $attendance;
+            });
+
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $httpException) {
+            if ($httpException->getStatusCode() === 409) {
+                return back()->withErrors(['clock_in' => $httpException->getMessage()]);
+            }
+            throw $httpException;
+        }
+
+        return redirect()
+            ->route('me.attendance.show', ['attendance' => $attendanceForToday->id])
+            ->with('ok', '出勤を記録しました。');
     }
 }

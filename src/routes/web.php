@@ -43,3 +43,8 @@ Route::get('/attendance', [AttendanceController::class, 'index'])
 Route::get('/', [AttendanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('home');
+
+Route::middleware('auth')->prefix('me')->group(function () {
+    Route::post('/attendance/clock-in', [\App\Http\Controllers\ClockController::class, 'clockIn'])
+        ->name('me.attendance.clock_in');
+});
