@@ -134,4 +134,63 @@ class AttendanceController extends Controller
             ->route('me.attendance.show', ['attendance' => $attendanceForToday->id])
             ->with('ok', '出勤を記録しました。');
     }
+
+    public function clockOut(Request $request)
+    {
+        $authenticatedUser = $request->user();
+        $nowJst = now(self::TZ);
+        $workDate = $nowJst->toDateString();
+
+        try {
+            $attendanceForToday = DB::transaction(function () use ($authenticatedUser, $workDate, $nowJst) {
+                // 当日の勤怠をロックして取得（休憩も一緒に）
+                $existingAttendance = Attendance::with('breaks')
+                    ->where('user_id', $authenticatedUser->id)
+                    ->whereDate('work_date', $workDate)
+                    ->lockForUpdate()
+                    ->first();
+
+                // 出勤記録が無い or 出勤していない
+                if (!$existingAttendance || $existingAttendance->clock_in === null) {
+                    abort(409, '本日の出勤記録がありません。');
+                }
+
+                // 退勤済み？
+                $isAlreadyClockedOut = $existingAttendance->clock_out !== null;
+                if ($isAlreadyClockedOut) {
+                    abort(409, '本日の業務は終了しています。');
+                }
+
+                // 休憩中（戻りが未入力の休憩がある）
+                $isOnBreakNow = $existingAttendance->breaks->contains(
+                    fn($breakRecord) => $breakRecord->started_at !== null && $breakRecord->ended_at === null
+                );
+                if ($isOnBreakNow) {
+                    abort(409, '今は休憩中です。先に休憩戻りを入力してください。');
+                }
+
+                // 退勤打刻（順序の最終チェックも一応）
+                if ($existingAttendance->clock_in->gt($nowJst)) {
+                    abort(422, '退勤時刻が出勤時刻よりも前です。');
+                }
+
+                $existingAttendance->clock_out = $nowJst;
+                $existingAttendance->save();
+
+                return $existingAttendance;
+            });
+
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $httpException) {
+            // 409/422 はフラッシュで画面に返す
+            $status = $httpException->getStatusCode();
+            if (in_array($status, [409, 422], true)) {
+                return back()->withErrors(['clock_out' => $httpException->getMessage()]);
+            }
+            throw $httpException;
+        }
+
+        return redirect()
+            ->route('me.attendance.show', ['attendance' => $attendanceForToday->id])
+            ->with('ok', '退勤を記録しました。お疲れさまでした！');
+    }
 }

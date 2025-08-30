@@ -48,3 +48,8 @@ Route::middleware('auth')->prefix('me')->group(function () {
     Route::post('/attendance/clock-in', [\App\Http\Controllers\ClockController::class, 'clockIn'])
         ->name('me.attendance.clock_in');
 });
+
+Route::middleware('auth')->prefix('me')->group(function () {
+    Route::post('/attendance/clock-out', [\App\Http\Controllers\ClockController::class, 'clockOut'])
+        ->name('me.attendance.clock_out');
+});
