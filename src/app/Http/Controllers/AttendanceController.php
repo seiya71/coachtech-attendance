@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\TodayAttendanceService;
+use App\Enums\AttendanceState;
 
 class AttendanceController extends Controller
 {
@@ -78,5 +79,41 @@ class AttendanceController extends Controller
         }
         return redirect()->route('me.attendance.show', ['attendance' => $attendance->id])
             ->with('ok', '休憩戻りを記録しました。');
+    }
+
+    public function index(Request $request)
+    {
+        $userId = $request->user()->id;
+        $nowJst = now(config('app.timezone', 'Asia/Tokyo'));
+        $workDate = $nowJst->toDateString();
+
+        // 1) ステータス判定
+        $attendance = $this->today->fetchToday($userId, withBreaks: true);
+        ['state' => $state, 'openBreak' => $openBreak] = $this->today->resolveState($attendance);
+
+        // 2) 日時の取得と加工
+        $displayNow = $nowJst->isoFormat('YYYY年MM月DD日(ddd) HH:mm'); // ローカライズ
+        $weekday = $nowJst->isoFormat('ddd');
+
+        // 3) ViewModel（ボタン活性/非活性をここで決めるとBladeが楽）
+        $vm = [
+            'now' => $displayNow,
+            'workDate' => $workDate,
+            'weekday' => $weekday,
+            'status' => $state->value, // enumなら ->value、定数クラスならそのまま
+            'attendanceId' => $attendance?->id,
+            'breakTimeId' => $openBreak?->id,
+            'canClockIn' => $state === AttendanceState::OFF_DUTY,
+            'canClockOut' => $state === AttendanceState::WORKING,
+            'canBreakIn' => $state === AttendanceState::WORKING,
+            'canBreakOut' => $state === AttendanceState::ON_BREAK,
+        ];
+
+        return view('attendance.index', $vm);
+    }
+
+    public function __invoke()
+    {
+        return to_route('attendance.index');
     }
 }

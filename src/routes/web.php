@@ -40,9 +40,7 @@ Route::get('/attendance', [AttendanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('attendance.index');
 
-Route::get('/', [AttendanceController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('home');
+Route::get('/', AttendanceController::class)->name('home');
 
 Route::middleware('auth')
     ->prefix('me/attendance')
