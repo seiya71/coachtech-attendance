@@ -3,117 +3,132 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\TodayAttendanceService;
-use App\Enums\AttendanceState;
+use App\Models\Attendance;
+use App\Models\BreakTime;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
-    public function __construct(private TodayAttendanceService $today)
+    private function statusCheck($userId): array
     {
-    }
+        $today = now('Asia/Tokyo')->toDateString();
 
-    public function statusToday(Request $request)
-    {
-        $userId = $request->user()->id;
-        $attendance = $this->today->fetchToday($userId, withBreaks: true);
-        ['state' => $state, 'openBreak' => $openBreak] = $this->today->resolveState($attendance);
+        $attendance = Attendance::with('breakTimes')
+            ->where('user_id', $userId)
+            ->whereDate('clock_in', $today)
+            ->latest('id')
+            ->first();
 
-        return response()->json([
-            'status' => $state,
-            'attendance_id' => $attendance?->id,
-            'break_time_id' => $openBreak?->id,   // ← キー名を統一
-        ]);
+        if (!$attendance) {
+            return ['status' => '勤務外', 'attendance' => null, 'break' => null];
+        }
+
+        if ($attendance->clock_out !== null) {
+            return ['status' => '退勤済', 'attendance' => $attendance, 'break' => null];
+        }
+
+        $openBreak = $attendance->breakTimes()
+            ->whereNull('end_time')
+            ->latest('start_time')
+            ->first();
+
+        if ($openBreak) {
+            return ['status' => '休憩中', 'attendance' => $attendance, 'break' => $openBreak];
+        }
+
+        return ['status' => '勤務中', 'attendance' => $attendance, 'break' => null];
     }
 
     public function clockIn(Request $request)
     {
-        try {
-            $attendance = $this->today->clockIn($request->user()->id);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            if (in_array($e->getStatusCode(), [409, 422], true)) {
-                return back()->withErrors(['clock_in' => $e->getMessage()]);
-            }
-            throw $e;
+        $userId = $request->user()->id;
+        $status = $this->statusCheck($userId)['status'];
+
+        if ($status !== '勤務外') {
+            return back()->withErrors(['clock_in' => 'すでに出勤済です。']);
         }
-        return redirect()->route('me.attendance.show', ['attendance' => $attendance->id])
-            ->with('ok', '出勤を記録しました。');
+
+        Attendance::create([
+            'user_id' => $userId,
+            'date' => now('Asia/Tokyo')->toDateString(),
+            'clock_in' => now('Asia/Tokyo'),
+        ]);
+
+        return redirect()->route('me.attendance.show')->with('ok', '出勤を記録しました。');
     }
 
     public function clockOut(Request $request)
     {
-        try {
-            $attendance = $this->today->clockOut($request->user()->id);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            if (in_array($e->getStatusCode(), [409, 422], true)) {
-                return back()->withErrors(['clock_out' => $e->getMessage()]);
-            }
-            throw $e;
+        $userId = $request->user()->id;
+        $data = $this->statusCheck($userId);
+
+        if ($data['status'] === '退勤済') {
+            return back()->withErrors(['clock_out' => '本日の業務は終了しています。']);
         }
-        return redirect()->route('me.attendance.show', ['attendance' => $attendance->id])
-            ->with('ok', '退勤を記録しました。お疲れさまでした！');
+
+        if ($data['status'] === '休憩中') {
+            return back()->withErrors(['clock_out' => '今は休憩中です。']);
+        }
+
+        $data['attendance']->update([
+            'clock_out' => now('Asia/Tokyo'),
+        ]);
+
+        return redirect()->route('me.attendance.show')->with('ok', '退勤を記録しました。');
     }
 
     public function startBreak(Request $request)
     {
-        try {
-            $attendance = $this->today->breakIn($request->user()->id);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            if (in_array($e->getStatusCode(), [409, 422], true)) {
-                return back()->withErrors(['break_in' => $e->getMessage()]);
-            }
-            throw $e;
+        $user = $request->user();
+        $statusInfo = $this->statusCheck($user->id);
+
+        if ($statusInfo['status'] !== '勤務中') {
+            return back()->withErrors(['break_in' => 'ただいま休憩はできません。']);
         }
-        return redirect()->route('me.attendance.show', ['attendance' => $attendance->id])
+
+        $attendance = $statusInfo['attendance'];
+
+        $attendance->breakTimes()->create([
+            'start_time' => now('Asia/Tokyo'),
+            'end_time' => null,
+        ]);
+
+        return redirect()
+            ->route('me.attendance.show')
             ->with('ok', '休憩入りを記録しました。');
     }
 
     public function finishBreak(Request $request)
     {
-        try {
-            $attendance = $this->today->breakOut($request->user()->id);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            if (in_array($e->getStatusCode(), [409, 422], true)) {
-                return back()->withErrors(['break_out' => $e->getMessage()]);
-            }
-            throw $e;
+        $user = $request->user();
+        $statusInfo = $this->statusCheck($user->id);
+
+        if ($statusInfo['status'] !== '休憩中') {
+            return back()->withErrors(['break_out' => 'まだ休憩をしていません。']);
         }
-        return redirect()->route('me.attendance.show', ['attendance' => $attendance->id])
+
+        $break = $statusInfo['break'];
+        $break->end_time = now('Asia/Tokyo');
+        $break->save();
+
+        return redirect()
+            ->route('me.attendance.show')
             ->with('ok', '休憩戻りを記録しました。');
     }
 
     public function index(Request $request)
     {
-        $userId = $request->user()->id;
-        $nowJst = now(config('app.timezone', 'Asia/Tokyo'));
-        $workDate = $nowJst->toDateString();
+        $user = $request->user();
+        $statusInfo = $this->statusCheck($user->id);
+        $now = now('Asia/Tokyo');
 
-        // 1) ステータス判定
-        $attendance = $this->today->fetchToday($userId, withBreaks: true);
-        ['state' => $state, 'openBreak' => $openBreak] = $this->today->resolveState($attendance);
-
-        // 2) 日時の取得と加工
-        $displayNow = $nowJst->isoFormat('YYYY年MM月DD日(ddd) HH:mm'); // ローカライズ
-        $weekday = $nowJst->isoFormat('ddd');
-
-        // 3) ViewModel（ボタン活性/非活性をここで決めるとBladeが楽）
-        $vm = [
-            'now' => $displayNow,
-            'workDate' => $workDate,
-            'weekday' => $weekday,
-            'status' => $state->value, // enumなら ->value、定数クラスならそのまま
-            'attendanceId' => $attendance?->id,
-            'breakTimeId' => $openBreak?->id,
-            'canClockIn' => $state === AttendanceState::OFF_DUTY,
-            'canClockOut' => $state === AttendanceState::WORKING,
-            'canBreakIn' => $state === AttendanceState::WORKING,
-            'canBreakOut' => $state === AttendanceState::ON_BREAK,
-        ];
-
-        return view('attendance.index', $vm);
-    }
-
-    public function __invoke()
-    {
-        return to_route('attendance.index');
+        return view('attendance', [
+            'status' => $statusInfo['status'],
+            'attendance' => $statusInfo['attendance'],
+            'break' => $statusInfo['break'],
+            'today' => $now->toDateString(),
+            'time' => $now->format('H:i:s'),
+        ]);
     }
 }

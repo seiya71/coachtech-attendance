@@ -36,24 +36,18 @@ Route::middleware('auth')->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 });
 
+Route::get('/', [AttendanceController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('home');
+
 Route::get('/attendance', [AttendanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
-    ->name('attendance.index');
+    ->name('me.attendance.show');
 
-Route::get('/', AttendanceController::class)->name('home');
-
-Route::middleware('auth')
-    ->prefix('me/attendance')
-    ->name('me.attendance.')
-    ->controller(AttendanceController::class)
-    ->group(function () {
-        // 画面や状態API（必要なら）
-        Route::get('/', 'index')->name('index');                 // /me/attendance
-        Route::get('/status', 'statusToday')->name('status');    // /me/attendance/status
-    
-        // 打刻系
-        Route::post('/clock-in', 'clockIn')->name('clock_in');  // /me/attendance/clock-in
-        Route::post('/clock-out', 'clockOut')->name('clock_out');// /me/attendance/clock-out
-        Route::post('/break-in', 'startBreak')->name('break_in');// /me/attendance/break-in
-        Route::post('/break-out', 'finishBreak')->name('break_out');// /me/attendance/break-out
-    });
+// 打刻処理
+Route::middleware(['auth', 'verified'])->prefix('me/attendance')->group(function () {
+    Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('me.attendance.clock_in');
+    Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('me.attendance.clock_out');
+    Route::post('/break-in', [AttendanceController::class, 'startBreak'])->name('me.attendance.break_in');
+    Route::post('/break-out', [AttendanceController::class, 'finishBreak'])->name('me.attendance.break_out');
+});
