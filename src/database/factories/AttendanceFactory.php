@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Carbon;
 use app\Models\Attendance;
 use app\Models\User;
 
@@ -13,6 +14,8 @@ class AttendanceFactory extends Factory
      *
      * @return array
      */
+    protected $model = Attendance::class;
+
     public function definition()
     {
         return [
