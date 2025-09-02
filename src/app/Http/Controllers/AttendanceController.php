@@ -10,9 +10,20 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
+    public static function todayJst(): Carbon
+    {
+        return now('Asia/Tokyo');
+    }
+
+    public static function todayFormatted(): string
+    {
+        $day = ['日', '月', '火', '水', '木', '金', '土'];
+        $now = self::todayJst();
+        return $now->format('Y年n月j日') . '(' . $day[$now->dayOfWeek] . ')';
+    }
     private function statusCheck($userId): array
     {
-        $today = now('Asia/Tokyo')->toDateString();
+        $today = $this->todayJst();
 
         $attendance = Attendance::with('breakTimes')
             ->where('user_id', $userId)
@@ -51,7 +62,7 @@ class AttendanceController extends Controller
 
         Attendance::create([
             'user_id' => $userId,
-            'date' => now('Asia/Tokyo')->toDateString(),
+            'date' => $this->todayJst(),
             'clock_in' => now('Asia/Tokyo'),
         ]);
 
@@ -72,7 +83,7 @@ class AttendanceController extends Controller
         }
 
         $data['attendance']->update([
-            'clock_out' => now('Asia/Tokyo'),
+            'clock_out' => $this->todayJst(),
         ]);
 
         return redirect()->route('attendance.index');
@@ -90,7 +101,7 @@ class AttendanceController extends Controller
         $attendance = $statusInfo['attendance'];
 
         $attendance->breakTimes()->create([
-            'start_time' => now('Asia/Tokyo'),
+            'start_time' => $this->todayJst(),
             'end_time' => null,
         ]);
 
@@ -108,7 +119,7 @@ class AttendanceController extends Controller
         }
 
         $break = $statusInfo['break'];
-        $break->end_time = now('Asia/Tokyo');
+        $break->end_time = $this->todayJst();
         $break->save();
 
         return redirect()
@@ -119,15 +130,14 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
         $statusInfo = $this->statusCheck($user->id);
-        $now = now('Asia/Tokyo');
-        $weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+        $now = $this->todayJst();
 
         return view('attendance', [
             'status' => $statusInfo['status'],
             'attendance' => $statusInfo['attendance'],
             'break' => $statusInfo['break'],
             'time' => $now->format('H:i'),
-            'date' => $now->format('Y年n月j日') . '(' . $weekdays[$now->dayOfWeek] . ')',
+            'date' => $this->todayFormatted(),
         ]);
     }
 }
