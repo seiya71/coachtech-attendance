@@ -36,4 +36,19 @@ class AttendanceTest extends TestCase
         $response->assertSeeText($expectedDateFormatted);
         $response->assertSeeText($expectedTime);
     }
+
+    /** @test */
+    public function 勤務外の場合、勤怠ステータスが正しく表示される(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)
+            ->get(route('attendance.index'));
+
+        $response->assertStatus(200)
+            ->assertSee('勤務外');
+    }
+
 }
