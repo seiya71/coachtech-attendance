@@ -6,6 +6,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\User;
+use App\Models\Attendance;
 
 class AttendanceTest extends TestCase
 {
@@ -51,4 +52,21 @@ class AttendanceTest extends TestCase
             ->assertSee('勤務外');
     }
 
+    /** @test */
+    public function 出勤中の場合、勤怠ステータスが正しく表示される()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now('Asia/Tokyo')->toDateString(),
+            'clock_in' => now('Asia/Tokyo')->subHours(2),
+            'clock_out' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.index'));
+
+        $response->assertSee('勤務中');
+    }
 }
