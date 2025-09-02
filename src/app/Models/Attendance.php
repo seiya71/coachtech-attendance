@@ -10,6 +10,13 @@ use App\Models\AttendanceApplication;
 
 class Attendance extends Model
 {
+    protected $fillable = [
+        'user_id',
+        'date',
+        'clock_in',
+        'clock_out',
+    ];
+
     use HasFactory;
 
     public function user()

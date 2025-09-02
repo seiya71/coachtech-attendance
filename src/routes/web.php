@@ -36,10 +36,18 @@ Route::middleware('auth')->group(function () {
     })->middleware(['throttle:6,1'])->name('verification.send');
 });
 
+Route::get('/', [AttendanceController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('home');
+
 Route::get('/attendance', [AttendanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('attendance.index');
 
-Route::get('/', [AttendanceController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('home');
+// 打刻処理
+Route::middleware(['auth', 'verified'])->prefix('me/attendance')->group(function () {
+    Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('me.attendance.clock_in');
+    Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('me.attendance.clock_out');
+    Route::post('/break-in', [AttendanceController::class, 'startBreak'])->name('me.attendance.break_in');
+    Route::post('/break-out', [AttendanceController::class, 'finishBreak'])->name('me.attendance.break_out');
+});
