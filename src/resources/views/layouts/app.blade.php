@@ -27,8 +27,9 @@
                     <a class="nav-link" href="">勤怠</a>
                     <a class="nav-link" href="">勤怠一覧</a>
                     <a class="nav-link" href="">申請</a>
-                    <form class="nav-link" action="">
-                        <button class="nav-logout">ログアウト</button>
+                    <form class="nav-link" method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button class="nav-logout" type="submit">ログアウト</button>
                     </form>
                 </nav>
             @endif

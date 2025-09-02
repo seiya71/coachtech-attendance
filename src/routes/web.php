@@ -1,6 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AttendanceController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,4 +17,37 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::post('/register', [AuthController::class, 'register'])->name('register.perform');
 
+Route::post('/login', [AuthController::class, 'login'])->name('login');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/email/verify', fn() => view('auth.verify-email'))
+        ->name('verification.notice');
+
+    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+        $request->fulfill();
+        return redirect()->route('home')->with('status', 'verified');
+    })->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+
+    Route::post('/email/verification-notification', function (Request $request) {
+        $request->user()->sendEmailVerificationNotification();
+        return back()->with('status', 'verification-link-sent');
+    })->middleware(['throttle:6,1'])->name('verification.send');
+});
+
+Route::get('/', [AttendanceController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('home');
+
+Route::get('/attendance', [AttendanceController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('attendance.index');
+
+// 打刻処理
+Route::middleware(['auth', 'verified'])->prefix('me/attendance')->group(function () {
+    Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('me.attendance.clock_in');
+    Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('me.attendance.clock_out');
+    Route::post('/break-in', [AttendanceController::class, 'startBreak'])->name('me.attendance.break_in');
+    Route::post('/break-out', [AttendanceController::class, 'finishBreak'])->name('me.attendance.break_out');
+});

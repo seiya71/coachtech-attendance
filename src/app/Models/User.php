@@ -10,7 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 use App\Models\Attendance;
 use App\Models\AttendanceApplication;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -43,6 +44,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    use HasFactory;
 
     public function attendances()
     {
