@@ -16,7 +16,7 @@ class AttendanceController extends Controller
 
         $attendance = Attendance::with('breakTimes')
             ->where('user_id', $userId)
-            ->whereDate('clock_in', $today)
+            ->whereDate('date', $today)
             ->latest('id')
             ->first();
 
@@ -46,7 +46,7 @@ class AttendanceController extends Controller
         $status = $this->statusCheck($userId)['status'];
 
         if ($status !== '勤務外') {
-            return back()->withErrors(['clock_in' => 'すでに出勤済です。']);
+            return back();
         }
 
         Attendance::create([
@@ -55,7 +55,7 @@ class AttendanceController extends Controller
             'clock_in' => now('Asia/Tokyo'),
         ]);
 
-        return redirect()->route('me.attendance.show')->with('ok', '出勤を記録しました。');
+        return redirect()->route('attendance.index');
     }
 
     public function clockOut(Request $request)
@@ -64,18 +64,18 @@ class AttendanceController extends Controller
         $data = $this->statusCheck($userId);
 
         if ($data['status'] === '退勤済') {
-            return back()->withErrors(['clock_out' => '本日の業務は終了しています。']);
+            return back();
         }
 
         if ($data['status'] === '休憩中') {
-            return back()->withErrors(['clock_out' => '今は休憩中です。']);
+            return back();
         }
 
         $data['attendance']->update([
             'clock_out' => now('Asia/Tokyo'),
         ]);
 
-        return redirect()->route('me.attendance.show')->with('ok', '退勤を記録しました。');
+        return redirect()->route('attendance.index');
     }
 
     public function startBreak(Request $request)
@@ -84,7 +84,7 @@ class AttendanceController extends Controller
         $statusInfo = $this->statusCheck($user->id);
 
         if ($statusInfo['status'] !== '勤務中') {
-            return back()->withErrors(['break_in' => 'ただいま休憩はできません。']);
+            return back();
         }
 
         $attendance = $statusInfo['attendance'];
@@ -95,8 +95,7 @@ class AttendanceController extends Controller
         ]);
 
         return redirect()
-            ->route('me.attendance.show')
-            ->with('ok', '休憩入りを記録しました。');
+            ->route('attendance.index');
     }
 
     public function finishBreak(Request $request)
@@ -105,7 +104,7 @@ class AttendanceController extends Controller
         $statusInfo = $this->statusCheck($user->id);
 
         if ($statusInfo['status'] !== '休憩中') {
-            return back()->withErrors(['break_out' => 'まだ休憩をしていません。']);
+            return back();
         }
 
         $break = $statusInfo['break'];
@@ -113,8 +112,7 @@ class AttendanceController extends Controller
         $break->save();
 
         return redirect()
-            ->route('me.attendance.show')
-            ->with('ok', '休憩戻りを記録しました。');
+            ->route('attendance.index');
     }
 
     public function index(Request $request)
@@ -122,13 +120,14 @@ class AttendanceController extends Controller
         $user = $request->user();
         $statusInfo = $this->statusCheck($user->id);
         $now = now('Asia/Tokyo');
+        $weekdays = ['日', '月', '火', '水', '木', '金', '土'];
 
         return view('attendance', [
             'status' => $statusInfo['status'],
             'attendance' => $statusInfo['attendance'],
             'break' => $statusInfo['break'],
-            'today' => $now->toDateString(),
-            'time' => $now->format('H:i:s'),
+            'time' => $now->format('H:i'),
+            'date' => $now->format('Y年n月j日') . '(' . $weekdays[$now->dayOfWeek] . ')',
         ]);
     }
 }

@@ -6,20 +6,12 @@
 
 @section('content')
     <div class="container">
-        <h2>本日: {{ $today }}（{{ $time }}）</h2>
-
-        <p>現在のステータス：<strong>{{ $status }}</strong></p>
+        <p>{{ $status }}</p>
+        <p>{{ $date }}</p>
+        <p>{{ $time }}</p>
 
         @if (session('ok'))
             <div class="alert alert-success">{{ session('ok') }}</div>
-        @endif
-
-        @if ($errors->any())
-            <div class="alert alert-danger">
-                @foreach ($errors->all() as $error)
-                    <p>{{ $error }}</p>
-                @endforeach
-            </div>
         @endif
 
         @if ($status === '勤務外')
@@ -46,7 +38,7 @@
             </form>
 
         @elseif ($status === '退勤済')
-            <p class="text-success">本日の勤務は終了しています。お疲れ様でした！</p>
+            <p class="text-success">お疲れ様でした。</p>
         @endif
     </div>
 @endsection
