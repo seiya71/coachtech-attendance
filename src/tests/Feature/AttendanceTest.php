@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Attendance;
+use App\Models\BreakTime;
 
 class AttendanceTest extends TestCase
 {
@@ -68,5 +69,30 @@ class AttendanceTest extends TestCase
         $response = $this->actingAs($user)->get(route('attendance.index'));
 
         $response->assertSee('勤務中');
+    }
+
+    /** @test */
+    public function 休憩中の場合、勤怠ステータスが正しく表示される()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now()->toDateString(),
+            'clock_in' => now()->subHours(2),
+            'clock_out' => null,
+        ]);
+
+        BreakTime::factory()->create([
+            'attendance_id' => $attendance->id,
+            'start_time' => now()->subMinutes(30),
+            'end_time' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.index'));
+
+        $response->assertSee('休憩中');
     }
 }

@@ -19,7 +19,7 @@ class BreakTimeFactory extends Factory
     public function definition()
     {
         return [
-            'Attendance_id' => Attendance::factory(),
+            'attendance_id' => Attendance::factory(),
             'start_time' => Carbon::now()->subMinutes(30),
             'end_time' => Carbon::now()->subMinutes(15),
         ];
