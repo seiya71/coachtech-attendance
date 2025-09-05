@@ -121,7 +121,7 @@ class AttendanceTest extends TestCase
         $response->assertSee('退勤済');
     }
 
-    public function test_出勤処理が正常に行われる()
+    public function 出勤ボタンが正しく機能する()
     {
         $user = User::factory()->create([
             'email_verified_at' => now(),
@@ -136,6 +136,21 @@ class AttendanceTest extends TestCase
         $response = $this->actingAs($user)->get(route('attendance.index'));
 
         $response->assertSee('勤務中');
+    }
+
+    public function 出勤は一日一回のみできる()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        Attendance::factory()->create([
+            'user_id' => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.index'));
+
+        $response->assertDontSee('出勤');
     }
 
 }
