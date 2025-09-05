@@ -180,4 +180,36 @@ class AttendanceTest extends TestCase
         $responseAfterBreakIn->assertSee('休憩中');
     }
 
+    /** @test */
+    public function 休憩は一日に何回でもできる()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now('Asia/Tokyo')->toDateString(),
+            'clock_in' => now('Asia/Tokyo')->subHours(4),
+            'clock_out' => null,
+        ]);
+
+        $break = BreakTime::factory()->create([
+            'attendance_id' => $attendance->id,
+            'start_time' => now('Asia/Tokyo')->subHour(),
+            'end_time' => null,
+        ]);
+
+        $this->actingAs($user)->get(route('attendance.index'))
+            ->assertSee('休憩戻');
+
+        $this->actingAs($user)->post(route('me.attendance.break_out'));
+
+        $this->actingAs($user)->post(route('me.attendance.break_in'));
+
+        $this->actingAs($user)
+            ->get(route('attendance.index'))
+            ->assertSee('休憩中');
+    }
+
 }
