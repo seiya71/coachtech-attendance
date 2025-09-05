@@ -120,4 +120,22 @@ class AttendanceTest extends TestCase
 
         $response->assertSee('退勤済');
     }
+
+    public function test_出勤処理が正常に行われる()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.index'));
+
+        $response->assertSee('出勤');
+
+        $this->actingAs($user)->post(route('me.attendance.clock_in'));
+
+        $response = $this->actingAs($user)->get(route('attendance.index'));
+
+        $response->assertSee('勤務中');
+    }
+
 }
