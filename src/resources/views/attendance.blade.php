@@ -23,7 +23,7 @@
         @elseif ($status === '勤務中')
             <form method="POST" action="{{ route('me.attendance.break_in') }}" class="d-inline">
                 @csrf
-                <button class="btn btn-warning">休憩開始</button>
+                <button class="btn btn-warning">休憩入</button>
             </form>
 
             <form method="POST" action="{{ route('me.attendance.clock_out') }}" class="d-inline">
@@ -34,7 +34,7 @@
         @elseif ($status === '休憩中')
             <form method="POST" action="{{ route('me.attendance.break_out') }}">
                 @csrf
-                <button class="btn btn-success">休憩終了</button>
+                <button class="btn btn-success">休憩戻</button>
             </form>
 
         @elseif ($status === '退勤済')

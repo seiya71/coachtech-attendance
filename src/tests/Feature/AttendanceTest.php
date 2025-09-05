@@ -121,6 +121,7 @@ class AttendanceTest extends TestCase
         $response->assertSee('退勤済');
     }
 
+    /** @test */
     public function 出勤ボタンが正しく機能する()
     {
         $user = User::factory()->create([
@@ -138,6 +139,7 @@ class AttendanceTest extends TestCase
         $response->assertSee('勤務中');
     }
 
+    /** @test */
     public function 出勤は一日一回のみできる()
     {
         $user = User::factory()->create([
@@ -151,6 +153,31 @@ class AttendanceTest extends TestCase
         $response = $this->actingAs($user)->get(route('attendance.index'));
 
         $response->assertDontSee('出勤');
+    }
+
+    /** @test */
+    public function 休憩ボタンが正しく機能する()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now('Asia/Tokyo')->toDateString(),
+            'clock_in' => now('Asia/Tokyo')->subHours(2),
+            'clock_out' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.index'));
+
+        $response->assertSee('休憩入');
+
+        $this->actingAs($user)->post(route('me.attendance.break_in'));
+
+        $responseAfterBreakIn = $this->actingAs($user)->get(route('attendance.index'));
+
+        $responseAfterBreakIn->assertSee('休憩中');
     }
 
 }
