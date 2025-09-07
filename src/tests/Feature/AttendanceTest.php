@@ -212,4 +212,28 @@ class AttendanceTest extends TestCase
             ->assertSee('休憩中');
     }
 
+    /** @test */
+    public function 退勤ボタンが正しく機能する()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now('Asia/Tokyo')->toDateString(),
+            'clock_in' => now('Asia/Tokyo')->subHours(4),
+            'clock_out' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.index'));
+
+        $response->assertSee('退勤');
+
+        $this->actingAs($user)->post(route('me.attendance.clock_out'));
+
+        $response = $this->actingAs($user)->get(route('attendance.index'));
+
+        $response->assertSee('退勤済');
+    }
 }
