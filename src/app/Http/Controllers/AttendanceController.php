@@ -301,4 +301,19 @@ class AttendanceController extends Controller
                 abort(404);
         }
     }
+
+    public function attendanceDetail(Request $request, $key = null)
+    {
+        $user = auth()->user();
+        $attendanceData = $this->getAttendanceDetail($request, $key);
+
+        if ($attendanceData['user_id'] !== $user->id) {
+            abort(403, '他人のデータにはアクセスできません');
+        }
+
+        return view('attendances.show', [
+            'attendance' => $attendanceData['data'],
+            'status' => $attendanceData['status'],
+        ]);
+    }
 }
