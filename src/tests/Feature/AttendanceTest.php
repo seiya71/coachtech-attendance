@@ -162,18 +162,12 @@ class AttendanceTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        $clockInTime = now('Asia/Tokyo')->subHours(2);
-        
-        $attendance = Attendance::factory()->create([
-            'user_id' => $user->id,
-            'date' => now('Asia/Tokyo')->toDateString(),
-            'clock_in' => now('Asia/Tokyo')->subHours(2),
-            'clock_out' => null,
-        ]);
+        $this->actingAs($user)->post(route('attendance.clock_in'));
 
         $response = $this->actingAs($user)->get(route('attendance.list'));
 
-        $response->assertSee($clockInTime->format('H:i'));
+        $clockInTime = now('Asia/Tokyo')->format('H:i');
+        $response->assertSee($clockInTime);
     }
 
     /** @test */
