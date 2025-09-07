@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\BreakTime;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\Application;
 
 class AttendanceController extends Controller
 {
@@ -245,43 +246,59 @@ class AttendanceController extends Controller
         ]);
     }
 
-    public function judgeDetailType($key)
+    private function getAttendanceDetail(Request $request, $key)
     {
         $user = auth()->user();
+        $routeName = $request->route()->getName();
 
-        if (is_numeric($key)) {
-            $attendance = Attendance::find($key);
-            if ($attendance && $attendance->user_id === $user->id) {
-                return response()->json([
-                    'status' => 'editable',
+        switch ($routeName) {
+            case 'attendance.detail':
+                $attendance = Attendance::with('breaks')
+                    ->where('id', $key)
+                    ->firstOrFail();
+
+                return [
                     'type' => 'attendance',
-                    'user_id' => $user->id,
-                ]);
-            }
+                    'user_id' => $attendance->user_id,
+                    'data' => $attendance,
+                    'status' => 'editable',
+                ];
 
-            $application = Application::find($key);
-            if ($application && $application->user_id === $user->id) {
-                return response()->json([
-                    'status' => 'submitted',
+            case 'attendance.application':
+                $application = Application::with('breakApplications')
+                    ->where('id', $key)
+                    ->firstOrFail();
+
+                return [
                     'type' => 'application',
+                    'user_id' => $application->user_id,
+                    'data' => $application,
+                    'status' => 'submitted',
+                ];
+
+            case 'attendance.new':
+                try {
+                    $date = Carbon::parse($key)->startOfDay();
+                } catch (\Exception $e) {
+                    abort(400, '不正な日付形式です');
+                }
+
+                return [
+                    'type' => 'new_entry',
                     'user_id' => $user->id,
-                ]);
-            }
+                    'data' => (object) [
+                        'id' => null,
+                        'user_id' => $user->id,
+                        'date' => $date,
+                        'clock_in' => null,
+                        'clock_out' => null,
+                        'breaks' => [],
+                    ],
+                    'status' => 'new_entry',
+                ];
 
-            return response()->json(['error' => 'データが見つかりません'], 404);
+            default:
+                abort(404);
         }
-
-        try {
-            $date = Carbon::parse($key)->format('Y-m-d');
-        } catch (\Exception $e) {
-            return response()->json(['error' => '不正なIDまたは日付形式です'], 400);
-        }
-
-        return response()->json([
-            'status' => 'new_entry',
-            'type' => 'date',
-            'user_id' => $user->id,
-            'date' => $date,
-        ]);
     }
 }
