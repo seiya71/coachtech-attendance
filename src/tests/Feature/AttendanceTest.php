@@ -156,6 +156,27 @@ class AttendanceTest extends TestCase
     }
 
     /** @test */
+    public function 出勤時刻が勤怠一覧画面で確認できる()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $clockInTime = now('Asia/Tokyo')->subHours(2);
+        
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now('Asia/Tokyo')->toDateString(),
+            'clock_in' => now('Asia/Tokyo')->subHours(2),
+            'clock_out' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.list'));
+
+        $response->assertSee($clockInTime->format('H:i'));
+    }
+
+    /** @test */
     public function 休憩ボタンが正しく機能する()
     {
         $user = User::factory()->create([
