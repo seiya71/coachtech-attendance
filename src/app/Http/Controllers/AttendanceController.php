@@ -150,7 +150,7 @@ class AttendanceController extends Controller
             ->where('user_id', $userId)
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->get()
-            ->keyBy(fn($a) => $a->date->format('Y-m-d'));
+            ->keyBy(fn($attendance) => $attendance->date->format('Y-m-d'));
 
         $results = [];
 
@@ -162,10 +162,10 @@ class AttendanceController extends Controller
                 $results[] = [
                     'date' => $date,
                     'attendance_id' => null,
-                    'clock_in' => '-',
-                    'clock_out' => '-',
-                    'break_time' => '-',
-                    'work_time' => '-',
+                    'clock_in' => '',
+                    'clock_out' => '',
+                    'break_time' => '',
+                    'work_time' => '',
                 ];
                 continue;
             }
@@ -175,7 +175,6 @@ class AttendanceController extends Controller
                     ? $break->end_time->diffInMinutes($break->start_time)
                     : 0);
             }, 0);
-
             $workMinutes = $attendance->clock_out
                 ? $attendance->clock_in->diffInMinutes($attendance->clock_out) - $breakTotalMin
                 : null;
@@ -185,8 +184,8 @@ class AttendanceController extends Controller
                 'attendance_id' => $attendance->id,
                 'clock_in' => optional($attendance->clock_in)->format('H:i'),
                 'clock_out' => optional($attendance->clock_out)->format('H:i'),
-                'break_time' => $breakTotalMin ? gmdate('H:i', $breakTotalMin * 60) : '-',
-                'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '-',
+                'break_time' => $breakTotalMin ? gmdate('H:i', $breakTotalMin * 60) : '',
+                'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '',
             ];
         }
 
@@ -211,10 +210,10 @@ class AttendanceController extends Controller
         return [
             'attendance_id' => $attendance->id,
             'date' => $attendance->date,
-            'clock_in' => optional($attendance->clock_in)->format('H:i') ?? '-',
-            'clock_out' => optional($attendance->clock_out)->format('H:i') ?? '-',
-            'break_time' => $breakMinutes ? gmdate('H:i', $breakMinutes * 60) : '-',
-            'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '-',
+            'clock_in' => optional($attendance->clock_in)->format('H:i') ?? '',
+            'clock_out' => optional($attendance->clock_out)->format('H:i') ?? '',
+            'break_time' => $breakMinutes ? gmdate('H:i', $breakMinutes * 60) : '',
+            'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '',
         ];
     }
 

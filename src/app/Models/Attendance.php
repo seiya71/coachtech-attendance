@@ -34,4 +34,9 @@ class Attendance extends Model
         return $this->hasMany(AttendanceApplication::class);
     }
 
+    protected $casts = [
+        'clock_in' => 'datetime',
+        'clock_out' => 'datetime',
+        'date' => 'date',
+    ];
 }

@@ -44,10 +44,11 @@ Route::get('/attendance', [AttendanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('attendance.index');
 
-// 打刻処理
-Route::middleware(['auth', 'verified'])->prefix('me/attendance')->group(function () {
-    Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('me.attendance.clock_in');
-    Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('me.attendance.clock_out');
-    Route::post('/break-in', [AttendanceController::class, 'startBreak'])->name('me.attendance.break_in');
-    Route::post('/break-out', [AttendanceController::class, 'finishBreak'])->name('me.attendance.break_out');
+Route::middleware(['auth', 'verified'])->prefix('attendance')->group(function () {
+    Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('attendance.clock_in');
+    Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('attendance.clock_out');
+    Route::post('/break-in', [AttendanceController::class, 'startBreak'])->name('attendance.break_in');
+    Route::post('/break-out', [AttendanceController::class, 'finishBreak'])->name('attendance.break_out');
+    Route::get('/list', [AttendanceController::class, 'listIndex'])->name('attendance.list');
+    Route::get('/{id}', [AttendanceController::class, 'show'])->name('attendance.detail');
 });

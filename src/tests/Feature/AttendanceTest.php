@@ -132,7 +132,7 @@ class AttendanceTest extends TestCase
 
         $response->assertSee('出勤');
 
-        $this->actingAs($user)->post(route('me.attendance.clock_in'));
+        $this->actingAs($user)->post(route('attendance.clock_in'));
 
         $response = $this->actingAs($user)->get(route('attendance.index'));
 
@@ -173,7 +173,7 @@ class AttendanceTest extends TestCase
 
         $response->assertSee('休憩入');
 
-        $this->actingAs($user)->post(route('me.attendance.break_in'));
+        $this->actingAs($user)->post(route('attendance.break_in'));
 
         $responseAfterBreakIn = $this->actingAs($user)->get(route('attendance.index'));
 
@@ -203,9 +203,9 @@ class AttendanceTest extends TestCase
         $this->actingAs($user)->get(route('attendance.index'))
             ->assertSee('休憩戻');
 
-        $this->actingAs($user)->post(route('me.attendance.break_out'));
+        $this->actingAs($user)->post(route('attendance.break_out'));
 
-        $this->actingAs($user)->post(route('me.attendance.break_in'));
+        $this->actingAs($user)->post(route('attendance.break_in'));
 
         $this->actingAs($user)
             ->get(route('attendance.index'))
@@ -230,7 +230,7 @@ class AttendanceTest extends TestCase
 
         $response->assertSee('退勤');
 
-        $this->actingAs($user)->post(route('me.attendance.clock_out'));
+        $this->actingAs($user)->post(route('attendance.clock_out'));
 
         $response = $this->actingAs($user)->get(route('attendance.index'));
 
