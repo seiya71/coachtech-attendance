@@ -230,4 +230,20 @@ class AttendanceController extends Controller
         return now('Asia/Tokyo')->startOfMonth();
     }
 
+    public function listIndex(Request $request)
+    {
+        $user = $request->user();
+
+        $currentMonth = $this->resolveMonth($request);
+
+        $attendanceList = $this->getMonthlyAttendanceList($user->id, $currentMonth);
+
+        return view('attendance_list', [
+            'attendanceList' => $attendanceList,
+            'currentMonth' => $currentMonth,
+            'prevMonth' => $currentMonth->copy()->subMonth(),
+            'nextMonth' => $currentMonth->copy()->addMonth(),
+        ]);
+    }
+
 }
