@@ -8,6 +8,8 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\Attendance;
 use App\Models\BreakTime;
+use Carbon\Carbon;
+
 
 class AttendanceTest extends TestCase
 {
@@ -156,7 +158,7 @@ class AttendanceTest extends TestCase
     }
 
     /** @test */
-    public function 出勤時刻が勤怠一覧画面で確認できる()
+    public function 出勤時刻が勤怠一覧に正しく表示される()
     {
         $user = User::factory()->create([
             'email_verified_at' => now(),
@@ -166,8 +168,13 @@ class AttendanceTest extends TestCase
 
         $response = $this->actingAs($user)->get(route('attendance.list'));
 
-        $clockInTime = now('Asia/Tokyo')->format('H:i');
-        $response->assertSee($clockInTime);
+        $today = now('Asia/Tokyo');
+        $weekday = ['日', '月', '火', '水', '木', '金', '土'][$today->dayOfWeek];
+        $expectedDate = $today->format("m/d（{$weekday}）");
+        $expectedClockIn = $today->format('H:i');
+
+        $response->assertSee($expectedDate);
+        $response->assertSee($expectedClockIn);
     }
 
     /** @test */
@@ -226,6 +233,38 @@ class AttendanceTest extends TestCase
             ->get(route('attendance.index'))
             ->assertSee('休憩中');
     }
+
+    /** @test */
+    public function 休憩時刻が勤怠一覧に正しく表示される()
+    {
+        $fixedNow = now('Asia/Tokyo')->setTime(12, 0, 0);
+        Carbon::setTestNow($fixedNow);
+
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => $fixedNow->toDateString(),
+            'clock_in' => $fixedNow->copy()->subHours(4), // 08:00
+            'clock_out' => null,
+        ]);
+
+        $attendance->breakTimes()->create([
+            'start_time' => $fixedNow->copy()->subMinutes(30), // 11:30
+            'end_time' => $fixedNow->copy()->subMinutes(15),   // 11:45
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.list'));
+
+        $expectedDate = $fixedNow->format('m/d（' . ['日', '月', '火', '水', '木', '金', '土'][$fixedNow->dayOfWeek] . '）');
+        $expectedBreakTime = '00:15';
+
+        $response->assertSee($expectedDate);
+        $response->assertSee($expectedBreakTime);
+    }
+
 
     /** @test */
     public function 退勤ボタンが正しく機能する()
