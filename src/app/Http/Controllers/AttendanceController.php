@@ -218,4 +218,16 @@ class AttendanceController extends Controller
         ];
     }
 
+    private function resolveMonth(Request $request): Carbon
+    {
+        if ($request->has('month')) {
+            try {
+                return Carbon::createFromFormat('Y-m', $request->query('month'))->startOfMonth();
+            } catch (\Exception $e) {
+            }
+        }
+
+        return now('Asia/Tokyo')->startOfMonth();
+    }
+
 }
