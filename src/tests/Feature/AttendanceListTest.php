@@ -55,11 +55,37 @@ class AttendanceListTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        $currentMonth = Carbon::today()->format('Y年/n月');
+        $currentMonth = Carbon::today()->format('Y/m');
 
         $response = $this->actingAs($user)->get('/attendance/list');
 
         $response->assertSee($currentMonth);
+    }
+
+    /** @test */
+    public function 前月を指定した際にその月の勤怠情報が表示される()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $previousMonth = Carbon::today()->subMonth();
+        $date = $previousMonth->copy()->startOfMonth();
+
+        Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => $date->toDateString(),
+            'clock_in' => $date->copy()->setTime(9, 0),
+            'clock_out' => $date->copy()->setTime(18, 0),
+        ]);
+
+        $response = $this->actingAs($user)->get('/attendance/list?month=' . $previousMonth->format('Y-m'));
+
+        $formattedMonth = $previousMonth->format('Y/m');
+        $response->assertSee($formattedMonth);
+
+        $response->assertSee('09:00');
+        $response->assertSee('18:00');
     }
 
 }

@@ -12,7 +12,7 @@
             </a>
 
             <div class="text-lg font-semibold">
-                {{ $currentMonth->format('Y年/n月') }}
+                {{ $currentMonth->format('Y/m') }}
             </div>
 
             <a href="{{ route('attendance.list', ['month' => $nextMonth->format('Y-m')]) }}" class="btn btn-secondary">
