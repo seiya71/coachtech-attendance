@@ -193,4 +193,29 @@ class AttendanceController extends Controller
         return $results;
     }
 
+    private function calculateWorkAndBreakTime(Attendance $attendance): array
+    {
+        $breakMinutes = $attendance->breakTimes->reduce(function ($total, $break) {
+            if ($break->start_time && $break->end_time) {
+                return $total + $break->end_time->diffInMinutes($break->start_time);
+            }
+            return $total;
+        }, 0);
+
+        if ($attendance->clock_in && $attendance->clock_out) {
+            $workMinutes = $attendance->clock_in->diffInMinutes($attendance->clock_out) - $breakMinutes;
+        } else {
+            $workMinutes = null;
+        }
+
+        return [
+            'attendance_id' => $attendance->id,
+            'date' => $attendance->date,
+            'clock_in' => optional($attendance->clock_in)->format('H:i') ?? '-',
+            'clock_out' => optional($attendance->clock_out)->format('H:i') ?? '-',
+            'break_time' => $breakMinutes ? gmdate('H:i', $breakMinutes * 60) : '-',
+            'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '-',
+        ];
+    }
+
 }
