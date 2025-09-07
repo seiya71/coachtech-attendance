@@ -290,4 +290,30 @@ class AttendanceTest extends TestCase
 
         $response->assertSee('退勤済');
     }
+
+    /** @test */
+    public function 退勤時刻が勤怠一覧に正しく表示される()
+    {
+        $fixedNow = now('Asia/Tokyo')->setTime(12, 0, 0);
+        Carbon::setTestNow($fixedNow);
+
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => $fixedNow->toDateString(),
+            'clock_in' => $fixedNow->copy()->subHours(4), // 08:00
+            'clock_out' => $fixedNow,                     // 12:00
+        ]);
+
+        $response = $this->actingAs($user)->get(route('attendance.list'));
+
+        $expectedDate = $fixedNow->format('m/d（' . ['日', '月', '火', '水', '木', '金', '土'][$fixedNow->dayOfWeek] . '）');
+        $expectedClockOut = '12:00';
+
+        $response->assertSee($expectedDate);
+        $response->assertSee($expectedClockOut);
+    }
 }
