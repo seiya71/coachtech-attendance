@@ -63,13 +63,39 @@ class AttendanceListTest extends TestCase
     }
 
     /** @test */
-    public function 前月を指定した際にその月の勤怠情報が表示される()
+    public function 「前月」を押下した時に表示月の前月の情報が表示される()
     {
         $user = User::factory()->create([
             'email_verified_at' => now(),
         ]);
 
         $previousMonth = Carbon::today()->subMonth();
+        $date = $previousMonth->copy()->startOfMonth();
+
+        Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => $date->toDateString(),
+            'clock_in' => $date->copy()->setTime(9, 0),
+            'clock_out' => $date->copy()->setTime(18, 0),
+        ]);
+
+        $response = $this->actingAs($user)->get('/attendance/list?month=' . $previousMonth->format('Y-m'));
+
+        $formattedMonth = $previousMonth->format('Y/m');
+        $response->assertSee($formattedMonth);
+
+        $response->assertSee('09:00');
+        $response->assertSee('18:00');
+    }
+
+    /** @test */
+    public function 「翌月」を押下した時に表示月の前月の情報が表示される()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $previousMonth = Carbon::today()->addMonth();
         $date = $previousMonth->copy()->startOfMonth();
 
         Attendance::factory()->create([
