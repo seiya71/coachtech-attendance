@@ -47,4 +47,19 @@ class AttendanceListTest extends TestCase
             $response->assertSee($clockIn);
         }
     }
+
+    /** @test */
+    public function 勤怠一覧画面に遷移した際に現在の月が表示される()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $currentMonth = Carbon::today()->format('Y年/n月');
+
+        $response = $this->actingAs($user)->get('/attendance/list');
+
+        $response->assertSee($currentMonth);
+    }
+
 }
