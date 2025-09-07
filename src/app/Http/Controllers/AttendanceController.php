@@ -140,4 +140,109 @@ class AttendanceController extends Controller
             'date' => $this->todayFormatted(),
         ]);
     }
+
+    private function getMonthlyAttendanceList(int $userId, Carbon $month): array
+    {
+        $startOfMonth = $month->copy()->startOfMonth();
+        $endOfMonth = $month->copy()->endOfMonth();
+
+        $attendances = Attendance::with('breakTimes')
+            ->where('user_id', $userId)
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
+            ->get()
+            ->keyBy(fn($attendance) => $attendance->date->format('Y-m-d'));
+
+        $results = [];
+
+        for ($day = 1; $day <= $month->daysInMonth; $day++) {
+            $date = $month->copy()->day($day);
+            $attendance = $attendances->get($date->format('Y-m-d'));
+
+            if (!$attendance) {
+                $results[] = [
+                    'date' => $date,
+                    'attendance_id' => null,
+                    'clock_in' => '',
+                    'clock_out' => '',
+                    'break_time' => '',
+                    'work_time' => '',
+                ];
+                continue;
+            }
+
+            $breakTotalMin = $attendance->breakTimes->reduce(function ($carry, $break) {
+                return $carry + ($break->start_time && $break->end_time
+                    ? $break->end_time->diffInMinutes($break->start_time)
+                    : 0);
+            }, 0);
+            $workMinutes = $attendance->clock_out
+                ? $attendance->clock_in->diffInMinutes($attendance->clock_out) - $breakTotalMin
+                : null;
+
+            $results[] = [
+                'date' => $date,
+                'attendance_id' => $attendance->id,
+                'clock_in' => optional($attendance->clock_in)->format('H:i'),
+                'clock_out' => optional($attendance->clock_out)->format('H:i'),
+                'break_time' => $breakTotalMin ? gmdate('H:i', $breakTotalMin * 60) : '',
+                'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '',
+            ];
+        }
+
+        return $results;
+    }
+
+    private function calculateWorkAndBreakTime(Attendance $attendance): array
+    {
+        $breakMinutes = $attendance->breakTimes->reduce(function ($total, $break) {
+            if ($break->start_time && $break->end_time) {
+                return $total + $break->end_time->diffInMinutes($break->start_time);
+            }
+            return $total;
+        }, 0);
+
+        if ($attendance->clock_in && $attendance->clock_out) {
+            $workMinutes = $attendance->clock_in->diffInMinutes($attendance->clock_out) - $breakMinutes;
+        } else {
+            $workMinutes = null;
+        }
+
+        return [
+            'attendance_id' => $attendance->id,
+            'date' => $attendance->date,
+            'clock_in' => optional($attendance->clock_in)->format('H:i') ?? '',
+            'clock_out' => optional($attendance->clock_out)->format('H:i') ?? '',
+            'break_time' => $breakMinutes ? gmdate('H:i', $breakMinutes * 60) : '',
+            'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '',
+        ];
+    }
+
+    private function resolveMonth(Request $request): Carbon
+    {
+        if ($request->has('month')) {
+            try {
+                return Carbon::createFromFormat('Y-m', $request->query('month'))->startOfMonth();
+            } catch (\Exception $e) {
+            }
+        }
+
+        return now('Asia/Tokyo')->startOfMonth();
+    }
+
+    public function listIndex(Request $request)
+    {
+        $user = $request->user();
+
+        $currentMonth = $this->resolveMonth($request);
+
+        $attendanceList = $this->getMonthlyAttendanceList($user->id, $currentMonth);
+
+        return view('attendance_list', [
+            'attendanceList' => $attendanceList,
+            'currentMonth' => $currentMonth,
+            'prevMonth' => $currentMonth->copy()->subMonth(),
+            'nextMonth' => $currentMonth->copy()->addMonth(),
+        ]);
+    }
+
 }

@@ -15,7 +15,7 @@
         @auth
             @if(Auth::user()->role === 'admin')
                 <nav class="header-nav">
-                    <a class="nav-link" href="">勤怠一覧</a>
+                    <a class="nav-link" href="/attendance/list">勤怠一覧</a>
                     <a class="nav-link" href="">スタッフ一覧</a>
                     <a class="nav-link" href="">申請一覧</a>
                     <form class="nav-link" action="">
@@ -24,8 +24,8 @@
                 </nav>
             @else
                 <nav class="header-nav">
-                    <a class="nav-link" href="">勤怠</a>
-                    <a class="nav-link" href="">勤怠一覧</a>
+                    <a class="nav-link" href="/attendance">勤怠</a>
+                    <a class="nav-link" href="/attendance/list">勤怠一覧</a>
                     <a class="nav-link" href="">申請</a>
                     <form class="nav-link" method="POST" action="{{ route('logout') }}">
                         @csrf
