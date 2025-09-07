@@ -1,0 +1,50 @@
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+use App\Models\User;
+use App\Models\Attendance;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+
+class AttendanceListTest extends TestCase
+{
+    /**
+     * A basic feature test example.
+     *
+     * @return void
+     */
+    use RefreshDatabase;
+
+    /** @test */
+    public function 自分の勤怠情報が一覧にすべて表示されている()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $startDate = Carbon::today();
+
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startDate->copy()->addDays($i);
+            Attendance::factory()->create([
+                'user_id' => $user->id,
+                'date' => $date->toDateString(),
+                'clock_in' => $date->copy()->setTime(9, 0),
+                'clock_out' => $date->copy()->setTime(18, 0),
+            ]);
+        }
+
+        $response = $this->actingAs($user)->get('/attendance/list');
+
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startDate->copy()->addDays($i);
+            $clockIn = $date->copy()->setTime(9, 0)->format('H:i');
+
+            $response->assertSee($clockIn);
+        }
+    }
+}
