@@ -245,4 +245,43 @@ class AttendanceController extends Controller
         ]);
     }
 
+    public function judgeDetailType($key)
+    {
+        $user = auth()->user();
+
+        if (is_numeric($key)) {
+            $attendance = Attendance::find($key);
+            if ($attendance && $attendance->user_id === $user->id) {
+                return response()->json([
+                    'status' => 'editable',
+                    'type' => 'attendance',
+                    'user_id' => $user->id,
+                ]);
+            }
+
+            $application = Application::find($key);
+            if ($application && $application->user_id === $user->id) {
+                return response()->json([
+                    'status' => 'submitted',
+                    'type' => 'application',
+                    'user_id' => $user->id,
+                ]);
+            }
+
+            return response()->json(['error' => 'データが見つかりません'], 404);
+        }
+
+        try {
+            $date = Carbon::parse($key)->format('Y-m-d');
+        } catch (\Exception $e) {
+            return response()->json(['error' => '不正なIDまたは日付形式です'], 400);
+        }
+
+        return response()->json([
+            'status' => 'new_entry',
+            'type' => 'date',
+            'user_id' => $user->id,
+            'date' => $date,
+        ]);
+    }
 }
