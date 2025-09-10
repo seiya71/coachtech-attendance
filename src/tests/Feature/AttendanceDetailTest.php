@@ -119,4 +119,32 @@ class AttendanceDetailTest extends TestCase
         $response->assertSee($start->format('H:i'));
         $response->assertSee($end->format('H:i'));
     }
+
+    /** @test */
+    public function test_出勤時間が退勤時間より後の場合はエラーになる()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => today()->toDateString(),
+            'clock_in' => '09:00',
+            'clock_out' => '18:00',
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->post('/attendance/application', [
+            'date' => now()->toDateString(),
+            'clock_in' => '18:00',
+            'clock_out' => '09:00',
+            'reason' => 'テスト申請',
+        ]);
+
+        $response->assertSessionHasErrors([
+            'clock_in' => '出勤時間もしくは退勤時間が不適切な値です',
+        ]);
+    }
 }

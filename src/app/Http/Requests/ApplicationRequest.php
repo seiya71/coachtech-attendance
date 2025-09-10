@@ -50,17 +50,17 @@ class ApplicationRequest extends FormRequest
                 $validator->errors()->add('clock_in', '出勤時間もしくは退勤時間が不適切な値です');
             }
 
-            foreach ($breaks as $i => $break) {
+            foreach ($breaks as $breakIndex => $break) {
                 $start = $break['start'] ?? null;
                 $end = $break['end'] ?? null;
 
                 if ($start && $end) {
                     if ($start >= $end) {
-                        $validator->errors()->add("breaks.$i.start", '休憩時間が不適切な値です');
+                        $validator->errors()->add("breaks.$breakIndex.start", '休憩時間が不適切な値です');
                     }
 
                     if ($end >= $out) {
-                        $validator->errors()->add("breaks.$i.end", '休憩時間もしくは退勤時間が不適切な値です');
+                        $validator->errors()->add("breaks.$breakIndex.end", '休憩時間もしくは退勤時間が不適切な値です');
                     }
                 }
             }
