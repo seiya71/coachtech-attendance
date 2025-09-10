@@ -17,6 +17,7 @@ class AttendanceApplication extends Model
         'attendance_id',
         'status',
         'reason',
+        'date',
         'clock_in',
         'clock_out'
     ];

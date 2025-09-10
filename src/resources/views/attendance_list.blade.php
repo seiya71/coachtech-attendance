@@ -33,19 +33,20 @@
             </thead>
             <tbody>
                 @foreach ($attendanceList as $day)
-                    <tr>
-                        <td class="border px-2 py-1">
-                            {{ $day['date']->format('m/d（' . ['日', '月', '火', '水', '木', '金', '土'][$day['date']->dayOfWeek] . '）') }}
-                        </td>
-                        <td>{{ $day['clock_in'] }}</td>
-                        <td>{{ $day['clock_out'] }}</td>
-                        <td>{{ $day['break_time'] }}</td>
-                        <td>{{ $day['work_time'] }}</td>
-                        <td>
-                            <a href="{{ route('attendance.detail', ['id' => $day['attendance_id'] ?? $day['date']->format('Y-m-d')]) }}"
-                                class="text-blue-600 underline">詳細</a>
-                        </td>
-                    </tr>
+                                <tr>
+                                    <td class="border px-2 py-1">
+                                        {{ $day['date']->format('m/d（' . ['日', '月', '火', '水', '木', '金', '土'][$day['date']->dayOfWeek] . '）') }}
+                                    </td>
+                                    <td>{{ $day['clock_in'] }}</td>
+                                    <td>{{ $day['clock_out'] }}</td>
+                                    <td>{{ $day['break_time'] }}</td>
+                                    <td>{{ $day['work_time'] }}</td>
+                                    <td>
+                                        <a href="{{ isset($day['attendance_id'])? route('attendance.detail', ['id' => $day['attendance_id']]): route('attendance.new', ['date' => $day['date']->format('Y-m-d')]) }}" class="text-blue-600 underline">
+                                            詳細
+                                        </a>
+                                    </td>
+                                </tr>
                 @endforeach
             </tbody>
         </table>

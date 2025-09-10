@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Attendance;
-use App\Models\Application;
+use App\Models\AttendanceApplication;
+use App\Models\AttendanceApplicationItem;
 use App\Models\BreakApplication;
+use App\Http\Requests\ApplicationRequest;
 
 class ApplicationController extends Controller
 {
-    public function submit(Request $request)
+    public function submit(ApplicationRequest $request)
     {
         $user = auth()->user();
 
@@ -21,18 +23,19 @@ class ApplicationController extends Controller
             ->first();
 
         DB::beginTransaction();
-
         try {
             $isNew = !$attendance;
 
-            $application = Application::create([
+            $application = AttendanceApplication::create([
                 'user_id' => $user->id,
                 'attendance_id' => $isNew ? null : $attendance->id,
+                'date' => $request->input('date'),
                 'status' => 'pending',
                 'reason' => $request->input('reason'),
                 'clock_in' => $request->input('clock_in'),
                 'clock_out' => $request->input('clock_out'),
             ]);
+
 
             $breaks = $request->input('breaks', []);
             foreach ($breaks as $break) {
@@ -40,7 +43,7 @@ class ApplicationController extends Controller
                 $end = $break['end'] ?? null;
 
                 if ($start && $end) {
-                    BreakApplication::create([
+                    AttendanceApplicationItem::create([
                         'attendance_application_id' => $application->id,
                         'break_time_id' => $break['id'] ?? null,
                         'start' => $start,
@@ -50,7 +53,7 @@ class ApplicationController extends Controller
             }
 
             DB::commit();
-
+            //dd('到達！');
             return redirect()->route('attendance.application', ['id' => $application->id])
                 ->with('success', $isNew ? '勤怠作成の申請を送信しました' : '勤怠修正の申請を送信しました');
 

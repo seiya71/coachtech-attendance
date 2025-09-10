@@ -3,8 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\ApplicationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -51,4 +53,19 @@ Route::middleware(['auth', 'verified'])->prefix('attendance')->group(function ()
     Route::post('/break-out', [AttendanceController::class, 'finishBreak'])->name('attendance.break_out');
     Route::get('/list', [AttendanceController::class, 'listIndex'])->name('attendance.list');
     Route::get('/{id}', [AttendanceController::class, 'show'])->name('attendance.detail');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/attendance/detail/{id}', [AttendanceController::class, 'attendanceDetail'])
+        ->name('attendance.detail');
+    Route::get('/attendance/application/{id}', [AttendanceController::class, 'attendanceDetail'])
+        ->name('attendance.application');
+    Route::get('/attendance/new/{date}', [AttendanceController::class, 'attendanceDetail'])
+        ->name('attendance.new');
+
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/attendance/application', [ApplicationController::class, 'submit'])
+        ->name('applications.submit');
 });

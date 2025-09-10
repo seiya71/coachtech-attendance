@@ -19,6 +19,7 @@ class CreateAttendanceApplicationsTable extends Migration
             $table->foreignId('attendance_id')->nullable()->constrained()->onDelete('set null');
             $table->string('status')->default('pending');
             $table->text('reason')->nullable();
+            $table->date('date');
             $table->time('clock_in');
             $table->time('clock_out');
             $table->timestamps();
