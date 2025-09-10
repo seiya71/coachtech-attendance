@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Attendance;
+use App\Models\BreakTime;
 use Carbon\Carbon;
 
 class AttendanceDetailTest extends TestCase
@@ -79,6 +80,37 @@ class AttendanceDetailTest extends TestCase
             'date' => now('Asia/Tokyo')->toDateString(),
             'clock_in' => $start,
             'clock_out' => $end,
+        ]);
+
+        $response = $this->actingAs($user)->get('/attendance/detail/' . $attendance->id);
+
+        $response->assertStatus(200);
+        $response->assertSee($start->format('H:i'));
+        $response->assertSee($end->format('H:i'));
+    }
+
+    /** @test */
+    public function 「休憩」にて記されている時間がログインユーザーの打刻と一致している()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $start = now('Asia/Tokyo')->subHours(2);
+
+        $end = now('Asia/Tokyo')->subHours(1);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now('Asia/Tokyo')->toDateString(),
+            'clock_in' => now('Asia/Tokyo')->subHours(4),
+            'clock_out' => now('Asia/Tokyo'),
+        ]);
+
+        $break = BreakTime::factory()->create([
+            'attendance_id' => $attendance->id,
+            'start_time' => $start,
+            'end_time' => $end,
         ]);
 
         $response = $this->actingAs($user)->get('/attendance/detail/' . $attendance->id);
