@@ -62,4 +62,29 @@ class AttendanceDetailTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee($date);
     }
+
+    /** @test */
+    public function 「出勤・退勤」にて記されている時間がログインユーザーの打刻と一致している()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $start = now('Asia/Tokyo')->subHours(4);
+
+        $end = now('Asia/Tokyo');
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now('Asia/Tokyo')->toDateString(),
+            'clock_in' => $start,
+            'clock_out' => $end,
+        ]);
+
+        $response = $this->actingAs($user)->get('/attendance/detail/' . $attendance->id);
+
+        $response->assertStatus(200);
+        $response->assertSee($start->format('H:i'));
+        $response->assertSee($end->format('H:i'));
+    }
 }
