@@ -143,10 +143,12 @@ class AttendanceDetailTest extends TestCase
             'reason' => 'テスト申請',
         ]);
 
-        $response->assertSessionHasErrors([
-            'clock_out' => '出勤時間もしくは退勤時間が不適切な値です',
-        ]);
+        $response->assertSessionHasErrors(['clock_out']);
+
+        $errorMessage = session('errors')->first('clock_out');
+        $this->assertSame('出勤時間もしくは退勤時間が不適切な値です', $errorMessage);
     }
+
 
 
     /** @test */
@@ -220,4 +222,32 @@ class AttendanceDetailTest extends TestCase
         $this->assertSame('休憩時間もしくは退勤時間が不適切な値です', $errorMessage);
     }
 
+    /** @test */
+    public function 備考欄が未入力の場合のエラーメッセージが表示される()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => today()->toDateString(),
+            'clock_in' => '09:00',
+            'clock_out' => '18:00',
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->post('/attendance/application', [
+            'date' => now()->toDateString(),
+            'clock_in' => '09:00',
+            'clock_out' => '18:30',
+            'reason' => '',
+        ]);
+
+        $response->assertSessionHasErrors(['reason']);
+
+        $errorMessage = session('errors')->first('reason');
+        $this->assertSame('備考を記入してください', $errorMessage);
+    }
 }
