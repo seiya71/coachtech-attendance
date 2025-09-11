@@ -95,4 +95,16 @@ class ApplicationController extends Controller
         return $applications;
     }
 
+    public function requests_list(Request $request)
+    {
+        if ($request->is('stamp_correction_request/list/approved')) {
+            $applications = $this->approved_list();
+            $isApproved = true;
+        } else {
+            $applications = $this->unapproved_list($request);
+            $isApproved = false;
+        }
+
+        return view('requests_list', compact('applications', 'isApproved'));
+    }
 }
