@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Attendance;
 use App\Models\AttendanceApplication;
 use App\Models\AttendanceApplicationItem;
@@ -61,5 +62,23 @@ class ApplicationController extends Controller
             DB::rollBack();
             return back()->withErrors(['error' => '申請処理中にエラーが発生しました']);
         }
+    }
+
+    public function unapproved_list(Request $request)
+    {
+        $userId = Auth::id();
+
+        $query = AttendanceApplication::with('breakApplications')
+            ->where('user_id', $userId);
+
+        if ($request->get('status') === 'approved') {
+            $query->where('status', 'approved');
+        } else {
+            $query->where('status', 'pending');
+        }
+
+        $applications = $query->orderBy('created_at', 'desc')->get();
+
+        return $applications;
     }
 }
