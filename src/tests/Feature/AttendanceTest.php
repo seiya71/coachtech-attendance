@@ -247,13 +247,13 @@ class AttendanceTest extends TestCase
         $attendance = Attendance::factory()->create([
             'user_id' => $user->id,
             'date' => $fixedNow->toDateString(),
-            'clock_in' => $fixedNow->copy()->subHours(4), // 08:00
+            'clock_in' => $fixedNow->copy()->subHours(4),
             'clock_out' => null,
         ]);
 
         $attendance->breakTimes()->create([
-            'start_time' => $fixedNow->copy()->subMinutes(30), // 11:30
-            'end_time' => $fixedNow->copy()->subMinutes(15),   // 11:45
+            'start_time' => $fixedNow->copy()->subMinutes(30),
+            'end_time' => $fixedNow->copy()->subMinutes(15),
         ]);
 
         $response = $this->actingAs($user)->get(route('attendance.list'));
@@ -304,8 +304,8 @@ class AttendanceTest extends TestCase
         Attendance::factory()->create([
             'user_id' => $user->id,
             'date' => $fixedNow->toDateString(),
-            'clock_in' => $fixedNow->copy()->subHours(4), // 08:00
-            'clock_out' => $fixedNow,                     // 12:00
+            'clock_in' => $fixedNow->copy()->subHours(4),
+            'clock_out' => $fixedNow,
         ]);
 
         $response = $this->actingAs($user)->get(route('attendance.list'));

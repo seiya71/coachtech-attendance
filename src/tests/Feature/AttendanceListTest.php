@@ -114,4 +114,29 @@ class AttendanceListTest extends TestCase
         $response->assertSee('18:00');
     }
 
+    /** @test */
+    public function 「詳細」を押下すると、その日の勤怠詳細画面に遷移する()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+            'name' => 'テスト太郎',
+        ]);
+
+        $date = now('Asia/Tokyo')->toDateString();
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => $date,
+            'clock_in' => now('Asia/Tokyo')->subHours(4),
+            'clock_out' => now('Asia/Tokyo'),
+        ]);
+
+        $this->actingAs($user)->get('/attendance/list');
+
+        $response = $this->actingAs($user)->get('/attendance/detail/' . $attendance->id);
+
+        $response->assertStatus(200);
+        $response->assertSee($date);
+        $response->assertSee('テスト太郎');
+    }
 }

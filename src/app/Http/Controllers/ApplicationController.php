@@ -53,7 +53,7 @@ class ApplicationController extends Controller
             }
 
             DB::commit();
-            //dd('到達！');
+            
             return redirect()->route('attendance.application', ['id' => $application->id])
                 ->with('success', $isNew ? '勤怠作成の申請を送信しました' : '勤怠修正の申請を送信しました');
 
