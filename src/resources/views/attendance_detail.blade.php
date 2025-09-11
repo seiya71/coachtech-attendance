@@ -13,14 +13,24 @@
 
         <div class="mb-3">
             <label>日付：</label>
-            <p class="form-control-plaintext">{{ $attendance->date->format('Y年n月j日') }}</p>
+            <p class="form-control-plaintext">{{ $attendance->date->format('Y年') }}</p>
+            <p class="form-control-plaintext">{{ $attendance->date->format('n月j日') }}</p>
         </div>
+
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         @if($attendance->is_editable)
             <form method="POST" action="{{ route('applications.submit', $attendance->id) }}">
                 @csrf
 
-                <input type="hidden" name="user_id" value="{{ auth()->id() }}">
                 <input type="hidden" name="date" value="{{ $attendance->date ?? $targetDate ?? '' }}">
 
                 <div class="mb-3">

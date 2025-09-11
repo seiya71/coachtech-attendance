@@ -121,7 +121,7 @@ class AttendanceDetailTest extends TestCase
     }
 
     /** @test */
-    public function test_出勤時間が退勤時間より後の場合はエラーになる()
+    public function 出勤時間が退勤時間より後になっている場合、エラーメッセージが表示される()
     {
         $user = User::factory()->create([
             'email_verified_at' => now(),
@@ -144,7 +144,45 @@ class AttendanceDetailTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors([
-            'clock_in' => '出勤時間もしくは退勤時間が不適切な値です',
+            'clock_out' => '出勤時間もしくは退勤時間が不適切な値です',
         ]);
     }
+
+
+    /** @test */
+    public function 休憩開始時間が退勤時間より後になっている場合、エラーメッセージが表示される()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $this->actingAs($user);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => now()->toDateString(),
+            'clock_in' => '09:00',
+            'clock_out' => '18:00',
+        ]);
+
+        $response = $this->post("/attendance/application", [
+            'date' => $attendance->date,
+            'clock_in' => $attendance->clock_in->format('H:i'),
+            'clock_out' => $attendance->clock_out->format('H:i'),
+            'breaks' => [
+                [
+                    'start' => '18:30',
+                    'end' => '19:00',
+                ]
+            ],
+            'reason' => 'テスト休憩申請',
+        ]);
+
+
+        $response->assertSessionHasErrors(['breaks.0.start']);
+
+        $errorMessage = session('errors')->first('breaks.0.start');
+        $this->assertSame('休憩時間が不適切な値です', $errorMessage);
+    }
+
 }
