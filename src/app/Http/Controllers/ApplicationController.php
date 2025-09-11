@@ -81,4 +81,18 @@ class ApplicationController extends Controller
 
         return $applications;
     }
+
+    public function approved_list()
+    {
+        $userId = Auth::id();
+
+        $applications = Application::with('breakApplications')
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $applications;
+    }
+
 }
