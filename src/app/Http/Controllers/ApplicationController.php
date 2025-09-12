@@ -64,36 +64,28 @@ class ApplicationController extends Controller
         }
     }
 
-    public function unapproved_list(Request $request)
+    private function getApplications(string $status)
     {
         $userId = Auth::id();
 
-        $query = AttendanceApplication::with('breakApplications')
-            ->where('user_id', $userId);
+        return AttendanceApplication::with('items')
+            ->where('user_id', $userId)
+            ->where('status', $status)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
 
-        if ($request->get('status') === 'approved') {
-            $query->where('status', 'approved');
-        } else {
-            $query->where('status', 'pending');
-        }
-
-        $applications = $query->orderBy('created_at', 'desc')->get();
-
-        return $applications;
+    public function unapproved_list()
+    {
+        return $this->getApplications('pending');
     }
 
     public function approved_list()
     {
-        $userId = Auth::id();
-
-        $applications = Application::with('breakApplications')
-            ->where('user_id', $userId)
-            ->where('status', 'approved')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return $applications;
+        return $this->getApplications('approved');
     }
+
+
 
     public function requests_list(Request $request)
     {
@@ -101,10 +93,11 @@ class ApplicationController extends Controller
             $applications = $this->approved_list();
             $isApproved = true;
         } else {
-            $applications = $this->unapproved_list($request);
+            $applications = $this->unapproved_list();
             $isApproved = false;
         }
 
         return view('requests_list', compact('applications', 'isApproved'));
     }
+
 }

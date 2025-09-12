@@ -6,14 +6,12 @@
 
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
-                <a class="nav-link {{ request('status') !== 'approved' ? 'active' : '' }}"
-                    href="{{ route('applications.index', ['status' => 'pending']) }}">
+                <a class="nav-link {{ !$isApproved ? 'active' : '' }}" href="{{ route('applications.list') }}">
                     承認待ち
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {{ request('status') === 'approved' ? 'active' : '' }}"
-                    href="{{ route('applications.index', ['status' => 'approved']) }}">
+                <a class="nav-link {{ $isApproved ? 'active' : '' }}" href="{{ route('applications.list.approved') }}">
                     承認済み
                 </a>
             </li>
@@ -33,7 +31,7 @@
                 @forelse($applications as $app)
                     <tr>
                         <td>{{ $app->status_label }}</td>
-                        <td>{{ $app->target_date->format('Y/m/d') }}</td>
+                        <td>{{ $app->date->format('Y/m/d') }}</td>
                         <td>{{ $app->reason }}</td>
                         <td>{{ $app->created_at->format('Y/m/d H:i') }}</td>
                         <td>
@@ -44,7 +42,9 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center">申請はありません</td>
+                        <td colspan="5" class="text-center">
+                            {{ $isApproved ? '承認済みの申請はありません' : '承認待ちの申請はありません' }}
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
