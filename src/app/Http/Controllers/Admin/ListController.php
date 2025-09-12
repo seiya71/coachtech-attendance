@@ -68,7 +68,7 @@ class ListController extends Controller
                 'date' => $targetDate,
                 'clock_in' => null,
                 'clock_out' => null,
-                'breaks' => collect([]), // ここも breaks で統一
+                'breaks' => collect([]),
                 'reason' => '',
                 'is_editable' => true,
             ];
@@ -80,6 +80,13 @@ class ListController extends Controller
             'attendance' => $data,
             'status' => $status,
         ]);
+    }
+
+    public function staffList()
+    {
+        $staffs = User::where('role', 'user')->get(['id', 'name', 'email']);
+
+        return view('admin.staff_list', compact('staffs'));
     }
 
 }
