@@ -69,3 +69,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/attendance/application', [ApplicationController::class, 'submit'])
         ->name('applications.submit');
 });
+
+Route::get('/stamp_correction_request/list', [ApplicationController::class, 'requests_list'])
+    ->name('applications.list');
+
+Route::get('/stamp_correction_request/list/approved', [ApplicationController::class, 'requests_list'])
+    ->name('applications.list.approved');

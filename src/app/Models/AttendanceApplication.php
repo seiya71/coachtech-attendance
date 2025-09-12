@@ -22,6 +22,21 @@ class AttendanceApplication extends Model
         'clock_out'
     ];
 
+    protected $casts = [
+        'date' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    public function getStatusLabelAttribute()
+    {
+        return match ($this->status) {
+            'pending' => '承認待ち',
+            'approved' => '承認済み',
+            default => '不明',
+        };
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

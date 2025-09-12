@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Attendance;
 use App\Models\AttendanceApplication;
 use App\Models\AttendanceApplicationItem;
@@ -62,4 +63,41 @@ class ApplicationController extends Controller
             return back()->withErrors(['error' => '申請処理中にエラーが発生しました']);
         }
     }
+
+    private function getApplications(string $status)
+    {
+        $userId = Auth::id();
+
+        return AttendanceApplication::with('items')
+            ->where('user_id', $userId)
+            ->where('status', $status)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function unapproved_list()
+    {
+        return $this->getApplications('pending');
+    }
+
+    public function approved_list()
+    {
+        return $this->getApplications('approved');
+    }
+
+
+
+    public function requests_list(Request $request)
+    {
+        if ($request->is('stamp_correction_request/list/approved')) {
+            $applications = $this->approved_list();
+            $isApproved = true;
+        } else {
+            $applications = $this->unapproved_list();
+            $isApproved = false;
+        }
+
+        return view('requests_list', compact('applications', 'isApproved'));
+    }
+
 }
