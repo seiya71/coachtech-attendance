@@ -8,7 +8,7 @@
     <div class="login-container">
         <form class="login-form" action="/login" method="post">
             @csrf
-            <h2 class="login-title">ログイン</h2>
+            <h2 class="login-title">管理者ログイン</h2>
             <div class="login-form__group">
                 <label class="login-form__label" for="name">メールアドレス</label>
                 <input class="login-form__input" type="email" id="email" name="email">
@@ -23,8 +23,7 @@
                     <p>{{ $message }}</p>
                 @enderror
             </div>
-            <button class="login-button" type="submit">ログインする</button>
-            <a class="register-link" href="/register">会員登録はこちら</a>
+            <button class="login-button" type="submit">管理者ログインする</button>
         </form>
     </div>
 @endsection
