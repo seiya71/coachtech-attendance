@@ -11,6 +11,13 @@ class AttendanceApplicationItem extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'attendance_application_id',
+        'break_time_id',
+        'start',
+        'end'
+    ];
+
     public function request()
     {
         return $this->belongsTo(AttendanceApplication::class);

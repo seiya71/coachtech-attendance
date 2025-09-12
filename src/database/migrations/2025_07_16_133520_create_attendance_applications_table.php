@@ -15,10 +15,13 @@ class CreateAttendanceApplicationsTable extends Migration
     {
         Schema::create('attendance_applications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
-            $table->foreignId('attendance_id')->constrained();
-            $table->string('status');
-            $table->text('reason');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('attendance_id')->nullable()->constrained()->onDelete('set null');
+            $table->string('status')->default('pending');
+            $table->text('reason')->nullable();
+            $table->date('date');
+            $table->time('clock_in');
+            $table->time('clock_out');
             $table->timestamps();
         });
     }

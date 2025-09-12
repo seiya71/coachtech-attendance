@@ -3,8 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\ApplicationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -44,10 +47,36 @@ Route::get('/attendance', [AttendanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('attendance.index');
 
-// 打刻処理
-Route::middleware(['auth', 'verified'])->prefix('me/attendance')->group(function () {
-    Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('me.attendance.clock_in');
-    Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('me.attendance.clock_out');
-    Route::post('/break-in', [AttendanceController::class, 'startBreak'])->name('me.attendance.break_in');
-    Route::post('/break-out', [AttendanceController::class, 'finishBreak'])->name('me.attendance.break_out');
+Route::middleware(['auth', 'verified'])->prefix('attendance')->group(function () {
+    Route::post('/clock-in', [AttendanceController::class, 'clockIn'])->name('attendance.clock_in');
+    Route::post('/clock-out', [AttendanceController::class, 'clockOut'])->name('attendance.clock_out');
+    Route::post('/break-in', [AttendanceController::class, 'startBreak'])->name('attendance.break_in');
+    Route::post('/break-out', [AttendanceController::class, 'finishBreak'])->name('attendance.break_out');
+    Route::get('/list', [AttendanceController::class, 'listIndex'])->name('attendance.list');
+    Route::get('/{id}', [AttendanceController::class, 'show'])->name('attendance.detail');
 });
+
+Route::middleware('auth')->group(function () {
+    Route::get('/attendance/detail/{id}', [AttendanceController::class, 'attendanceDetail'])
+        ->name('attendance.detail');
+    Route::get('/attendance/application/{id}', [AttendanceController::class, 'attendanceDetail'])
+        ->name('attendance.application');
+    Route::get('/attendance/new/{date}', [AttendanceController::class, 'attendanceDetail'])
+        ->name('attendance.new');
+
+});
+
+Route::middleware('auth')->group(function () {
+    Route::post('/attendance/application', [ApplicationController::class, 'submit'])
+        ->name('applications.submit');
+});
+
+Route::get('/stamp_correction_request/list', [ApplicationController::class, 'requests_list'])
+    ->name('applications.list');
+
+Route::get('/stamp_correction_request/list/approved', [ApplicationController::class, 'requests_list'])
+    ->name('applications.list.approved');
+
+Route::get('/admin/login', [AdminAuthController::class, 'admin_login'])->name('admin.login');
+
+Route::post('/admin/login', [AdminAuthController::class, 'admin_login_form'])->name('admin.login.form');

@@ -15,10 +15,10 @@ class CreateAttendanceApplicationItemsTable extends Migration
     {
         Schema::create('attendance_application_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('attendance_application_id')->constrained();
-            $table->foreignId('break_time_id')->nullable();
-            $table->string('field');
-            $table->time('value');
+            $table->foreignId('attendance_application_id')->constrained()->onDelete('cascade');
+            $table->foreignId('break_time_id')->nullable()->constrained()->onDelete('set null');
+            $table->time('start');
+            $table->time('end');
             $table->timestamps();
         });
     }
