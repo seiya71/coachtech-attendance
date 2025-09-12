@@ -92,4 +92,41 @@ class ApplicationTest extends TestCase
         $response->assertSee('打刻漏れ');
         $response->assertSee($user->name);
     }
+
+    /** @test */
+    public function 各申請の「詳細」を押下すると勤怠詳細画面に遷移する()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => today(),
+            'clock_in' => '09:00',
+            'clock_out' => '18:00',
+        ]);
+
+        $this->actingAs($user);
+
+        $this->post(route('applications.submit', $attendance->id), [
+            'date' => $attendance->date->toDateString(),
+            'clock_in' => '08:30',
+            'clock_out' => '18:00',
+            'reason' => '打刻漏れ',
+        ]);
+
+        $application = AttendanceApplication::first();
+
+        $response = $this->get(route('applications.list'));
+        $response->assertStatus(200);
+        $response->assertSee('詳細');
+
+        $detailResponse = $this->get(route('attendance.application', $application->id));
+
+        $detailResponse->assertStatus(200);
+        $detailResponse->assertSee('勤怠詳細');
+        $detailResponse->assertSee($attendance->date->format('Y年'));
+        $detailResponse->assertSee($attendance->date->format('n月j日'));
+    }
 }
