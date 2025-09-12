@@ -48,10 +48,21 @@
                         <td class="border px-2 py-1">{{ $day['break_time'] ?? '00:00' }}</td>
                         <td class="border px-2 py-1">{{ $day['work_time'] ?? '00:00' }}</td>
                         <td class="border px-2 py-1">
-                            <a href="{{ route('admin.attendance.detail', ['user_id' => $user->id, 'date' => $day['date']->toDateString()]) }}"
-                                class="text-blue-600 underline">
-                                詳細
-                            </a>
+                            @if($day['attendance_id'])
+                                                    <a href="{{ route('admin.attendance.detail', [
+                                    'user_id' => $user->id,
+                                    'attendance_id' => $day['attendance_id']
+                                ]) }}">
+                                                        詳細
+                                                    </a>
+                            @else
+                                                    <a href="{{ route('admin.attendance.detail.new', [
+                                    'user_id' => $user->id,
+                                    'date' => $day['date']->toDateString()
+                                ]) }}">
+                                                        詳細
+                                                    </a>
+                            @endif
                         </td>
                     </tr>
                 @empty

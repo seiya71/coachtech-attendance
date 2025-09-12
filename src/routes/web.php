@@ -83,8 +83,19 @@ Route::post('/admin/login', [AdminAuthController::class, 'admin_login_form'])->n
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/attendance/list', [ListController::class, 'index'])
         ->name('admin.attendance_list');
-    Route::get('/admin/attendance/{user_id}/{date}', [ListController::class, 'attendanceDetail'])
+    Route::get(
+        '/admin/attendance/{user_id}/attendance/{attendance_id}',
+        [ListController::class, 'attendanceDetail']
+    )
         ->name('admin.attendance.detail');
+
+    Route::get(
+        '/admin/attendance/{user_id}/date/{date}',
+        [ListController::class, 'attendanceDetailNew']
+    )
+        ->name('admin.attendance.detail.new');
     Route::get('/admin/staff/list', [ListController::class, 'staffList'])
         ->name('admin.staff_list');
+    Route::get('/admin/attendance/staff/{user_id}', [ListController::class, 'staffAttendanceList'])
+        ->name('admin.attendance.staff');
 });

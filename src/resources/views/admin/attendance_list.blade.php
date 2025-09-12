@@ -39,19 +39,18 @@
             </thead>
             <tbody>
                 @forelse ($attendances as $attendance)
-                    <tr>
-                        <td class="border px-2 py-1">{{ $attendance->user->name }}</td>
-                        <td class="border px-2 py-1">{{ $attendance->clock_in_formatted }}</td>
-                        <td class="border px-2 py-1">{{ $attendance->clock_out_formatted }}</td>
-                        <td class="border px-2 py-1">{{ $attendance->break_time_formatted }}</td>
-                        <td class="border px-2 py-1">{{ $attendance->work_time_formatted }}</td>
-                        <td class="border px-2 py-1">
-                            <a href="{{ route('admin.attendance.detail', ['user_id' => $attendance->user_id, 'date' => $attendance->date->toDateString()]) }}" class="text-blue-600 underline">
-                                詳細
-                            </a>
-
-                        </td>
-                    </tr>
+                                    <tr>
+                                        <td class="border px-2 py-1">{{ $attendance->user->name }}</td>
+                                        <td class="border px-2 py-1">{{ $attendance->clock_in_formatted }}</td>
+                                        <td class="border px-2 py-1">{{ $attendance->clock_out_formatted }}</td>
+                                        <td class="border px-2 py-1">{{ $attendance->break_time_formatted }}</td>
+                                        <td class="border px-2 py-1">{{ $attendance->work_time_formatted }}</td>
+                                        <td class="border px-2 py-1">
+                                            <a href="{{ route('admin.attendance.detail', ['user_id' => $attendance->user_id,'attendance_id' => $attendance->id]) }}" class="text-blue-600 underline">
+                                                詳細
+                                            </a>
+                                        </td>
+                                    </tr>
                 @empty
                     <tr>
                         <td colspan="6" class="text-center py-2">この日の勤怠情報はありません</td>

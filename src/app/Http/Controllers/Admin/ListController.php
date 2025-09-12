@@ -43,43 +43,45 @@ class ListController extends Controller
         return view('admin.attendance_list', compact('attendances', 'currentDate'));
     }
 
-    public function attendanceDetail(Request $request, $userId, $date)
+    public function attendanceDetail(Request $request, $userId, $attendanceId)
     {
-        $targetDate = Carbon::parse($date)->toDateString();
-
         $attendance = Attendance::with('breakTimes')
             ->where('user_id', $userId)
-            ->whereDate('date', $targetDate)
-            ->first();
+            ->findOrFail($attendanceId);
 
-        if ($attendance) {
-            $data = $attendance->setAttribute('breaks', $attendance->breakTimes->map(fn($item) => (object) [
-                'start' => $item->start_time,
-                'end' => $item->end_time,
-            ]));
+        $attendance->breaks = $attendance->breakTimes->map(fn($item) => (object) [
+            'start' => $item->start_time,
+            'end' => $item->end_time,
+        ]);
 
-            $data->date = Carbon::parse($data->date);
-            $data->setAttribute('is_editable', true);
+        $attendance->is_editable = true;
 
-            $status = 'attendance';
-        } else {
-            $data = (object) [
-                'id' => null,
-                'user_id' => $userId,
-                'date' => $targetDate,
-                'clock_in' => null,
-                'clock_out' => null,
-                'breaks' => collect([]),
-                'reason' => '',
-                'is_editable' => true,
-            ];
+        return view('admin.attendance_detail', [
+            'attendance' => $attendance,
+            'status' => 'attendance',
+        ]);
+    }
 
-            $status = 'new_entry';
-        }
+    public function attendanceDetailNew(Request $request, $userId, $date)
+    {
+        $targetDate = Carbon::createFromFormat('Y-m-d', $date)->toDateString();
+        $user = User::findOrFail($userId);
+
+        $data = (object) [
+            'id' => null,
+            'user_id' => $userId,
+            'user' => $user,
+            'date' => Carbon::parse($targetDate),
+            'clock_in' => null,
+            'clock_out' => null,
+            'breaks' => collect([]),
+            'reason' => '',
+            'is_editable' => true,
+        ];
 
         return view('admin.attendance_detail', [
             'attendance' => $data,
-            'status' => $status,
+            'status' => 'new_entry',
         ]);
     }
 
@@ -89,17 +91,43 @@ class ListController extends Controller
 
         return view('admin.staff_list', compact('staffs'));
     }
+    private function normalizeTime($value): ?Carbon
+    {
+        if (!$value)
+            return null;
+        if ($value instanceof Carbon)
+            return $value;
+
+        if (is_string($value)) {
+            foreach (['H:i:s', 'H:i'] as $fmt) {
+                try {
+                    return Carbon::createFromFormat($fmt, $value);
+                } catch (\Exception $e) {
+                }
+            }
+        }
+        return null;
+    }
 
     private function getMonthlyAttendanceList(int $userId, Carbon $month): array
     {
         $startOfMonth = $month->copy()->startOfMonth();
         $endOfMonth = $month->copy()->endOfMonth();
 
-        $attendances = Attendance::with('breakTimes')
+        $attendances = Attendance::with('breakTimes', 'user')
             ->where('user_id', $userId)
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->get()
-            ->keyBy(fn($attendance) => $attendance->date->format('Y-m-d'));
+            ->keyBy(function ($attendance) {
+                $d = $attendance->date;
+                if ($d instanceof Carbon)
+                    return $d->format('Y-m-d');
+                try {
+                    return Carbon::parse($d)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    return (string) $d;
+                }
+            });
 
         $results = [];
 
@@ -119,40 +147,46 @@ class ListController extends Controller
                 continue;
             }
 
-            $breakTotalMin = $attendance->breakTimes->reduce(function ($carry, $break) {
-                return $carry + ($break->start_time && $break->end_time
-                    ? $break->end_time->diffInMinutes($break->start_time)
-                    : 0);
+            $clockIn = $this->normalizeTime($attendance->clock_in);
+            $clockOut = $this->normalizeTime($attendance->clock_out);
+
+            $breakTotalMin = $attendance->breakTimes->reduce(function (int $carry, $break) {
+                $start = $this->normalizeTime($break->start_time);
+                $end = $this->normalizeTime($break->end_time);
+                if ($start && $end) {
+                    return $carry + $end->diffInMinutes($start);
+                }
+                return $carry;
             }, 0);
-            $workMinutes = $attendance->clock_out
-                ? $attendance->clock_in->diffInMinutes($attendance->clock_out) - $breakTotalMin
+
+            $workMinutes = ($clockIn && $clockOut)
+                ? $clockOut->diffInMinutes($clockIn) - $breakTotalMin
                 : null;
 
             $results[] = [
                 'date' => $date,
                 'attendance_id' => $attendance->id,
-                'clock_in' => optional($attendance->clock_in)->format('H:i'),
-                'clock_out' => optional($attendance->clock_out)->format('H:i'),
-                'break_time' => $breakTotalMin ? gmdate('H:i', $breakTotalMin * 60) : '',
-                'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '',
+                'clock_in' => $clockIn ? $clockIn->format('H:i') : '',
+                'clock_out' => $clockOut ? $clockOut->format('H:i') : '',
+                'break_time' => $breakTotalMin !== null ? gmdate('H:i', max(0, $breakTotalMin) * 60) : '',
+                'work_time' => $workMinutes !== null ? gmdate('H:i', max(0, $workMinutes) * 60) : '',
             ];
         }
 
         return $results;
     }
 
+
     private function resolveMonth(Request $request): Carbon
     {
-        if ($request->has('month')) {
-            try {
-                return Carbon::createFromFormat('Y-m', $request->query('month'))->startOfMonth();
-            } catch (\Exception $e) {
-            }
+        $monthParam = $request->query('month');
+
+        if ($monthParam && preg_match('/^\d{4}-\d{2}$/', $monthParam)) {
+            return Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
         }
 
         return now('Asia/Tokyo')->startOfMonth();
     }
-
     public function staffAttendanceList(Request $request, int $userId)
     {
         $user = User::findOrFail($userId);
