@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Attendance;
+use App\Models\User;
 
 class ListController extends Controller
 {
@@ -84,7 +85,7 @@ class ListController extends Controller
 
     public function staffList()
     {
-        $staffs = User::where('role', 'user')->get(['id', 'name', 'email']);
+        $staffs = User::all(['id', 'name', 'email', 'role']);
 
         return view('admin.staff_list', compact('staffs'));
     }
