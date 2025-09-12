@@ -56,4 +56,40 @@ class ApplicationTest extends TestCase
         $response->assertSee('打刻漏れ');
         $response->assertSee($user->name);
     }
+
+    /** @test */
+    public function 「承認済み」に管理者が承認した修正申請が全て表示されている()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $attendance = Attendance::factory()->create([
+            'user_id' => $user->id,
+            'date' => today(),
+            'clock_in' => '09:00',
+            'clock_out' => '18:00',
+        ]);
+
+        $this->actingAs($user);
+
+        $this->post(route('applications.submit', $attendance->id), [
+            'date' => $attendance->date->toDateString(),
+            'clock_in' => '08:30',
+            'clock_out' => '18:00',
+            'reason' => '打刻漏れ',
+        ]);
+
+        $application = AttendanceApplication::first();
+        $this->assertEquals('pending', $application->status);
+
+        $application->update(['status' => 'approved']);
+
+        $response = $this->get(route('applications.list.approved'));
+
+        $response->assertStatus(200);
+        $response->assertSee('承認済み');
+        $response->assertSee('打刻漏れ');
+        $response->assertSee($user->name);
+    }
 }
