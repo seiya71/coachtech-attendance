@@ -6,6 +6,7 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ApplicationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Admin\AuthController;
 
 
 /*
@@ -75,3 +76,5 @@ Route::get('/stamp_correction_request/list', [ApplicationController::class, 'req
 
 Route::get('/stamp_correction_request/list/approved', [ApplicationController::class, 'requests_list'])
     ->name('applications.list.approved');
+
+Route::get('/admin/login', [AuthController::class, 'admin_login'])->name('admin.login');
