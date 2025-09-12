@@ -48,7 +48,8 @@
 
                 <div class="mb-3">
                     <label>休憩：</label>
-                    @foreach ($attendance->breaks as $index => $break)
+                    @foreach ($attendance->breaks ?? [] as $index => $break)
+
                         <div class="d-flex mb-2">
                             <input type="time" name="breaks[{{ $index }}][start]"
                                 value="{{ old("breaks.$index.start", optional($break->start)->format('H:i')) }}"

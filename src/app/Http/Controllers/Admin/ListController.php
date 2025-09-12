@@ -11,7 +11,7 @@ class ListController extends Controller
 {
     private function getAttendancesByDate(string $date)
     {
-        return Attendance::with(['user', 'breaks'])
+        return Attendance::with('breakTimes', 'user')
             ->whereDate('date', $date)
             ->get();
     }
@@ -41,4 +41,45 @@ class ListController extends Controller
 
         return view('admin.attendance_list', compact('attendances', 'currentDate'));
     }
+
+    public function attendanceDetail(Request $request, $userId, $date)
+    {
+        $targetDate = Carbon::parse($date)->toDateString();
+
+        $attendance = Attendance::with('breakTimes')
+            ->where('user_id', $userId)
+            ->whereDate('date', $targetDate)
+            ->first();
+
+        if ($attendance) {
+            $data = $attendance->setAttribute('breaks', $attendance->breakTimes->map(fn($item) => (object) [
+                'start' => $item->start_time,
+                'end' => $item->end_time,
+            ]));
+
+            $data->date = Carbon::parse($data->date);
+            $data->setAttribute('is_editable', true);
+
+            $status = 'attendance';
+        } else {
+            $data = (object) [
+                'id' => null,
+                'user_id' => $userId,
+                'date' => $targetDate,
+                'clock_in' => null,
+                'clock_out' => null,
+                'breaks' => collect([]), // ここも breaks で統一
+                'reason' => '',
+                'is_editable' => true,
+            ];
+
+            $status = 'new_entry';
+        }
+
+        return view('admin.attendance_detail', [
+            'attendance' => $data,
+            'status' => $status,
+        ]);
+    }
+
 }

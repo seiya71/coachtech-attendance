@@ -30,12 +30,10 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-
-        if (Auth::attempt($request->only('email', 'password'))) {
+        if (Auth::attempt($request->only('email', 'password') + ['role' => 'user'])) {
             $request->session()->regenerate();
-            return redirect()->intended(route('attendance.index'));
+            return redirect()->route('attendance.index');
         }
-
-        return back()->withErrors(['email' => 'ログイン情報が登録されていません'])->onlyInput('email');
+        return back();
     }
 }

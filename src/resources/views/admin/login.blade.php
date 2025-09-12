@@ -6,7 +6,7 @@
 
 @section('content')
     <div class="login-container">
-        <form class="login-form" action="/login" method="post">
+        <form class="login-form" action="/admin/login" method="post">
             @csrf
             <h2 class="login-title">管理者ログイン</h2>
             <div class="login-form__group">

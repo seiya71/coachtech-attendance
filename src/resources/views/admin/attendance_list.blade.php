@@ -32,8 +32,8 @@
                     <th class="border px-2 py-1">名前</th>
                     <th class="border px-2 py-1">出勤</th>
                     <th class="border px-2 py-1">退勤</th>
-                    <th class="border px-2 py-1">休憩時間</th>
-                    <th class="border px-2 py-1">労働時間</th>
+                    <th class="border px-2 py-1">休憩</th>
+                    <th class="border px-2 py-1">合計</th>
                     <th class="border px-2 py-1">詳細</th>
                 </tr>
             </thead>
@@ -41,15 +41,15 @@
                 @forelse ($attendances as $attendance)
                     <tr>
                         <td class="border px-2 py-1">{{ $attendance->user->name }}</td>
-                        <td class="border px-2 py-1">{{ $attendance->clock_in ?? '-' }}</td>
-                        <td class="border px-2 py-1">{{ $attendance->clock_out ?? '-' }}</td>
-                        <td class="border px-2 py-1">{{ $attendance->breaks->sum('duration') ?? 0 }}分</td>
-                        <td class="border px-2 py-1">{{ $attendance->work_time ?? 0 }}分</td>
+                        <td class="border px-2 py-1">{{ $attendance->clock_in_formatted }}</td>
+                        <td class="border px-2 py-1">{{ $attendance->clock_out_formatted }}</td>
+                        <td class="border px-2 py-1">{{ $attendance->break_time_formatted }}</td>
+                        <td class="border px-2 py-1">{{ $attendance->work_time_formatted }}</td>
                         <td class="border px-2 py-1">
-                            <a href="{{ route('admin.attendance.detail', ['id' => $attendance->id]) }}"
-                                class="text-blue-600 underline">
+                            <a href="{{ route('admin.attendance.detail', ['user_id' => $attendance->user_id, 'date' => $attendance->date->toDateString()]) }}" class="text-blue-600 underline">
                                 詳細
                             </a>
+
                         </td>
                     </tr>
                 @empty

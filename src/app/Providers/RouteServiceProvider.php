@@ -19,6 +19,14 @@ class RouteServiceProvider extends ServiceProvider
      */
     public const HOME = '/attendance';
 
+    protected function redirectTo($request)
+    {
+        if (Auth::check() && Auth::user()->role === 'admin') {
+            return '/admin/attendance/list';
+        }
+        return '/attendance';
+    }
+
     /**
      * The controller namespace for the application.
      *

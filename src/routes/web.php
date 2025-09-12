@@ -84,6 +84,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/attendance/list', [ListController::class, 'index'])
         ->name('admin.attendance_list');
 
-    Route::get('/admin/attendance/{id}', [AdminAttendanceController::class, 'detail'])
+    Route::get('/admin/attendance/{user_id}/{date}', [ListController::class, 'attendanceDetail'])
         ->name('admin.attendance.detail');
 });

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\BreakTime;
 use App\Models\AttendanceApplication;
+use Carbon\Carbon;
 
 class Attendance extends Model
 {
@@ -39,4 +40,26 @@ class Attendance extends Model
         'clock_out' => 'datetime',
         'date' => 'date',
     ];
+
+    public function getClockInFormattedAttribute()
+    {
+        return $this->clock_in ? Carbon::parse($this->clock_in)->format('H:i') : '-';
+    }
+
+    public function getClockOutFormattedAttribute()
+    {
+        return $this->clock_out ? Carbon::parse($this->clock_out)->format('H:i') : '-';
+    }
+
+    public function getBreakTimeFormattedAttribute()
+    {
+        $minutes = $this->breakTimes?->sum('duration') ?? 0;
+        return sprintf('%02d:%02d', floor($minutes / 60), $minutes % 60);
+    }
+
+    public function getWorkTimeFormattedAttribute()
+    {
+        $minutes = $this->work_time ?? 0;
+        return sprintf('%02d:%02d', floor($minutes / 60), $minutes % 60);
+    }
 }
