@@ -16,4 +16,18 @@ class ListController extends Controller
             ->get();
     }
 
+    private function resolveDate(?string $date, ?string $direction): string
+    {
+        $currentDate = $date ?? today()->toDateString();
+        $carbon = Carbon::parse($currentDate);
+
+        if ($direction === 'next') {
+            return $carbon->addDay()->toDateString();
+        } elseif ($direction === 'prev') {
+            return $carbon->subDay()->toDateString();
+        }
+
+        return $carbon->toDateString();
+    }
+
 }
