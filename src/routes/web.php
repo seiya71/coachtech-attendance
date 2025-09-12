@@ -79,4 +79,4 @@ Route::get('/stamp_correction_request/list/approved', [ApplicationController::cl
 
 Route::get('/admin/login', [AdminAuthController::class, 'admin_login'])->name('admin.login');
 
-Route::post('/admin/login', [AdminAuthController::class, 'admin_login_form'])->name('admin.login.form');
+Route::post('/admin/login', [AdminAuthController::class, 'admin_login_form'])->name('admin.login.form');1
