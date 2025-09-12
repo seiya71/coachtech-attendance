@@ -30,4 +30,15 @@ class ListController extends Controller
         return $carbon->toDateString();
     }
 
+    public function index(Request $request)
+    {
+        $currentDate = $this->resolveDate(
+            $request->input('date'),
+            $request->input('direction')
+        );
+
+        $attendances = $this->getAttendancesByDate($currentDate);
+
+        return view('admin.attendance_list', compact('attendances', 'currentDate'));
+    }
 }
