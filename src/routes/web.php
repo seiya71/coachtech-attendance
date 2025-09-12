@@ -71,12 +71,10 @@ Route::middleware('auth')->group(function () {
         ->name('applications.submit');
 });
 
-Route::get('/stamp_correction_request/list', [ApplicationController::class, 'requests_list'])
-    ->name('applications.list');
+Route::get('/stamp_correction_request/list', [ApplicationController::class, 'requests_list'])->name('applications.list');
 
-Route::get('/stamp_correction_request/list/approved', [ApplicationController::class, 'requests_list'])
-    ->name('applications.list.approved');
+Route::get('/stamp_correction_request/list/approved', [ApplicationController::class, 'requests_list'])->name('applications.list.approved');
 
 Route::get('/admin/login', [AdminAuthController::class, 'admin_login'])->name('admin.login');
 
-Route::post('/admin/login', [AdminAuthController::class, 'admin_login_form'])->name('admin.login.form');1
+Route::post('/admin/login', [AdminAuthController::class, 'admin_login_form'])->name('admin.login.form');
