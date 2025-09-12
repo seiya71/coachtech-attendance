@@ -21,6 +21,7 @@
             <thead>
                 <tr>
                     <th>状態</th>
+                    <th>名前</th>
                     <th>対象日時</th>
                     <th>申請理由</th>
                     <th>申請日時</th>
@@ -31,6 +32,7 @@
                 @forelse($applications as $app)
                     <tr>
                         <td>{{ $app->status_label }}</td>
+                        <td>{{ $app->user->name }}</td>
                         <td>{{ $app->date->format('Y/m/d') }}</td>
                         <td>{{ $app->reason }}</td>
                         <td>{{ $app->created_at->format('Y/m/d H:i') }}</td>
