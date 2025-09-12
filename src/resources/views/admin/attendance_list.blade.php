@@ -11,48 +11,52 @@
         <h1 class="text-xl font-bold mb-4">勤怠一覧</h1>
 
         <div class="flex items-center justify-between mb-4">
-            <a href="{{ route('attendance.list', ['month' => $prevMonth->format('Y-m')]) }}" class="btn btn-secondary">
-                ← 前月
+            <a href="{{ route('admin.attendance_list', ['date' => \Carbon\Carbon::parse($currentDate)->subDay()->toDateString()]) }}"
+                class="btn btn-secondary">
+                ← 前日
             </a>
 
             <div class="text-lg font-semibold">
-                {{ $currentMonth->format('Y/m') }}
+                {{ \Carbon\Carbon::parse($currentDate)->format('Y年n月j日（' . ['日', '月', '火', '水', '木', '金', '土'][\Carbon\Carbon::parse($currentDate)->dayOfWeek] . '）') }}
             </div>
 
-            <a href="{{ route('attendance.list', ['month' => $nextMonth->format('Y-m')]) }}" class="btn btn-secondary">
-                翌月 →
+            <a href="{{ route('admin.attendance_list', ['date' => \Carbon\Carbon::parse($currentDate)->addDay()->toDateString()]) }}"
+                class="btn btn-secondary">
+                翌日 →
             </a>
         </div>
 
         <table class="table-auto w-full border-collapse border">
             <thead>
                 <tr class="bg-gray-100">
-                    <th class="border px-2 py-1">日付</th>
+                    <th class="border px-2 py-1">名前</th>
                     <th class="border px-2 py-1">出勤</th>
                     <th class="border px-2 py-1">退勤</th>
-                    <th class="border px-2 py-1">休憩</th>
-                    <th class="border px-2 py-1">合計</th>
+                    <th class="border px-2 py-1">休憩時間</th>
+                    <th class="border px-2 py-1">労働時間</th>
                     <th class="border px-2 py-1">詳細</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($attendanceList as $day)
+                @forelse ($attendances as $attendance)
                     <tr>
+                        <td class="border px-2 py-1">{{ $attendance->user->name }}</td>
+                        <td class="border px-2 py-1">{{ $attendance->clock_in ?? '-' }}</td>
+                        <td class="border px-2 py-1">{{ $attendance->clock_out ?? '-' }}</td>
+                        <td class="border px-2 py-1">{{ $attendance->breaks->sum('duration') ?? 0 }}分</td>
+                        <td class="border px-2 py-1">{{ $attendance->work_time ?? 0 }}分</td>
                         <td class="border px-2 py-1">
-                            {{ $day['date']->format('m/d（' . ['日', '月', '火', '水', '木', '金', '土'][$day['date']->dayOfWeek] . '）') }}
-                        </td>
-                        <td>{{ $day['clock_in'] }}</td>
-                        <td>{{ $day['clock_out'] }}</td>
-                        <td>{{ $day['break_time'] }}</td>
-                        <td>{{ $day['work_time'] }}</td>
-                        <td>
-                            <a href="{{ isset($day['attendance_id']) ? route('attendance.detail', ['id' => $day['attendance_id']]) : route('attendance.new', ['date' => $day['date']->format('Y-m-d')]) }}"
+                            <a href="{{ route('admin.attendance.detail', ['id' => $attendance->id]) }}"
                                 class="text-blue-600 underline">
                                 詳細
                             </a>
                         </td>
                     </tr>
-                @endforeach
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-2">この日の勤怠情報はありません</td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
