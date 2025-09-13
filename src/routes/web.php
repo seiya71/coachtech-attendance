@@ -7,6 +7,8 @@ use App\Http\Controllers\ApplicationController;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\ListController;
+use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 
 
 /*
@@ -71,12 +73,50 @@ Route::middleware('auth')->group(function () {
         ->name('applications.submit');
 });
 
-Route::get('/stamp_correction_request/list', [ApplicationController::class, 'requests_list'])
-    ->name('applications.list');
+Route::get('/stamp_correction_request/list', [ApplicationController::class, 'requests_list'])->name('applications.list');
 
-Route::get('/stamp_correction_request/list/approved', [ApplicationController::class, 'requests_list'])
-    ->name('applications.list.approved');
+Route::get('/stamp_correction_request/list/approved', [ApplicationController::class, 'requests_list'])->name('applications.list.approved');
 
 Route::get('/admin/login', [AdminAuthController::class, 'admin_login'])->name('admin.login');
 
 Route::post('/admin/login', [AdminAuthController::class, 'admin_login_form'])->name('admin.login.form');
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/admin/attendance/list', [ListController::class, 'index'])
+        ->name('admin.attendance_list');
+    Route::get(
+        '/admin/attendance/{user_id}/attendance/{attendance_id}',
+        [ListController::class, 'attendanceDetail']
+    )
+        ->name('admin.attendance.detail');
+
+    Route::get(
+        '/admin/attendance/{user_id}/date/{date}',
+        [ListController::class, 'attendanceDetailNew']
+    )
+        ->name('admin.attendance.detail.new');
+    Route::get('/admin/staff/list', [ListController::class, 'staffList'])
+        ->name('admin.staff_list');
+    Route::get('/admin/attendance/staff/{user_id}', [ListController::class, 'staffAttendanceList'])
+        ->name('admin.attendance.staff');
+});
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/stamp_correction_request/list', [AdminApplicationController::class, 'requestsList'])
+        ->name('admin.applications.list');
+
+    Route::get('/stamp_correction_request/list/approved', [AdminApplicationController::class, 'requestsList'])
+        ->name('admin.applications.list.approved');
+});
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get(
+        '/admin/stamp_correction_request/approve/{application}',
+        [AdminApplicationController::class, 'approveForm']
+    )->name('admin.application.approve.form');
+
+    Route::post(
+        '/admin/stamp_correction_request/approve/{application}',
+        [AdminApplicationController::class, 'approve']
+    )->name('admin.application.approve');
+});
