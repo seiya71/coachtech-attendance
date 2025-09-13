@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\ListController;
+use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
 
 
 /*
@@ -98,4 +99,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('admin.staff_list');
     Route::get('/admin/attendance/staff/{user_id}', [ListController::class, 'staffAttendanceList'])
         ->name('admin.attendance.staff');
+});
+
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/stamp_correction_request/list', [AdminApplicationController::class, 'requestsList'])
+        ->name('admin.applications.list');
+
+    Route::get('/stamp_correction_request/list/approved', [AdminApplicationController::class, 'requestsList'])
+        ->name('admin.applications.list.approved');
 });
