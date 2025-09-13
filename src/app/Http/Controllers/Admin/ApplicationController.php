@@ -53,7 +53,6 @@ class ApplicationController extends Controller
 
             $attendance->clock_in = $application->clock_in;
             $attendance->clock_out = $application->clock_out;
-            //$attendance->reason = $application->reason;
             $attendance->save();
 
             $attendance->breakTimes()->delete();
