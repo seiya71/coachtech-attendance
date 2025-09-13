@@ -18,6 +18,11 @@ class AttendanceApplicationItem extends Model
         'end'
     ];
 
+    protected $casts = [
+        'start' => 'datetime:H:i',
+        'end' => 'datetime:H:i',
+    ];
+
     public function request()
     {
         return $this->belongsTo(AttendanceApplication::class);

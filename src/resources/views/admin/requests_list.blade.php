@@ -33,18 +33,20 @@
             </thead>
             <tbody>
                 @forelse($applications as $app)
-                            <tr>
-                                <td>{{ $app->status_label }}</td>
-                                <td>{{ $app->user->name }}</td>
-                                <td>{{ $app->date->format('Y/m/d') }}</td>
-                                <td>{{ $app->reason }}</td>
-                                <td>{{ $app->created_at->format('Y/m/d H:i') }}</td>
-                                <td>
-                                    <a href="">
-                                        詳細
-                                    </a>
-                                </td>
-                            </tr>
+                    <tr>
+                        <td>{{ $app->status_label }}</td>
+                        <td>{{ $app->user->name }}</td>
+                        <td>{{ $app->date->format('Y/m/d') }}</td>
+                        <td>{{ $app->reason }}</td>
+                        <td>{{ $app->created_at->format('Y/m/d H:i') }}</td>
+                        <td>
+                            <a href="{{ route('admin.application.approve.form', $app->id) }}">
+                                詳細
+                            </a>
+
+                        </td>
+
+                    </tr>
                 @empty
                     <tr>
                         <td colspan="6" class="text-center">申請はありません</td>
