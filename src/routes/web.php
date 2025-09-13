@@ -108,3 +108,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/stamp_correction_request/list/approved', [AdminApplicationController::class, 'requestsList'])
         ->name('admin.applications.list.approved');
 });
+
+Route::get(
+    '/admin/stamp_correction_request/approve/{attendance_application_id}',
+    [AdminApplicationController::class, 'approveForm']
+)->name('admin.application.approve.form');
+
+Route::post(
+    '/admin/stamp_correction_request/approve/{attendance_application_id}',
+    [AdminApplicationController::class, 'approve']
+)->name('admin.application.approve');

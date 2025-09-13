@@ -24,6 +24,8 @@ class AttendanceApplication extends Model
 
     protected $casts = [
         'date' => 'date',
+        'clock_in' => 'datetime:H:i',
+        'clock_out' => 'datetime:H:i',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
