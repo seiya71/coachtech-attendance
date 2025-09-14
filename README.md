@@ -56,17 +56,11 @@ docker-compose exec php chmod -R 775 storage
 docker-compose exec php chmod -R 775 bootstrap/cache
 ```
 
-7. `docker-compose exec php php artisan storage:link`
-
-8. マイグレーションの実行
+7. マイグレーションの実行
 ``` bash
 docker-compose exec php php artisan migrate
 ```
-9. シーディング用の商品画像の配置場所の作成
-``` bash
-mkdir -p src/storage/app/public/item_images
-```
-10. シーディングの実行
+9. シーディングの実行
 ``` bash
 docker-compose exec php php artisan db:seed
 ```
@@ -90,11 +84,9 @@ docker-compose exec php php artisan test --env=testing
 ## 使用技術（実行環境）
 * nginx 1.21.1
 * mysql 8.0.26
-* php 7.4.9-fpm
+* php 8.1-fpm
 * Laravel Framework 8.83.28
 * Fortify
-* Storage
-* Stripe
 * Mailtrap
 ## ER図
 ![/ER](/ER.drawio.png)

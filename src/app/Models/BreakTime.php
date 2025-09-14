@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class BreakTime extends Model
 {
@@ -24,4 +25,15 @@ class BreakTime extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
     ];
+
+    public function getStartAttribute()
+    {
+        return $this->start_time ? Carbon::parse($this->start_time) : null;
+    }
+
+    public function getEndAttribute()
+    {
+        return $this->end_time ? Carbon::parse($this->end_time) : null;
+    }
+
 }

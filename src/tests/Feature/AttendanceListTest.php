@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Attendance;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use App\Models\AttendanceApplication;
 
 class AttendanceListTest extends TestCase
 {
@@ -138,5 +139,30 @@ class AttendanceListTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee($date);
         $response->assertSee('テスト太郎');
+    }
+
+    /** @test */
+    public function 承認済みタブに承認済みの申請が表示される()
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+
+        $application = AttendanceApplication::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'approved',
+            'reason' => '打刻漏れ',
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->get(route('applications.list.approved'));
+
+        $response->assertStatus(200);
+
+        $response->assertSee('承認済み');
+        $response->assertSee($application->reason);
+        $response->assertSee($application->date->format('Y/m/d'));
     }
 }
