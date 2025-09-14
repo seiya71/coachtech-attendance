@@ -60,7 +60,7 @@ docker-compose exec php chmod -R 775 bootstrap/cache
 ``` bash
 docker-compose exec php php artisan migrate
 ```
-9. シーディングの実行
+8. シーディングの実行
 ``` bash
 docker-compose exec php php artisan db:seed
 ```
