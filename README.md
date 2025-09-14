@@ -3,8 +3,7 @@
 **Dockerビルド**
 1. `git clone git@github.com:seiya71/coachtech-attendance.git`
 2. `cd coachtech-attendance`
-3. `mkdir -p docker/mysql/data`
-4. `docker-compose up -d --build`
+3. `docker-compose up -d --build`
 > *MacのM1・M2チップのPCの場合、`no matching manifest for linux/arm64/v8 in the manifest list entries`のメッセージが表示されビルドができないことがあります。
 エラーが発生する場合は、docker-compose.ymlファイルの「mysql」内に「platform」の項目を追加で記載してください*
 ``` bash
@@ -15,7 +14,7 @@ mysql:
 ```
 
 **Laravel環境構築**
-1. `docker-compose exec php composer create-project "laravel/laravel=8.*" . --prefer-dist`
+1. `docker-compose exec php composer install`
 2. `cp src/.env.example src/.env`
 3. .envに以下の環境変数を追加
 ``` text
@@ -25,9 +24,6 @@ DB_PORT=3306
 DB_DATABASE=laravel_db
 DB_USERNAME=laravel_user
 DB_PASSWORD=laravel_pass
-
-STRIPE_PUBLIC_KEY=
-STRIPE_SECRET_KEY=
 
 MAIL_MAILER=smtp
 MAIL_HOST=sandbox.smtp.mailtrap.io
