@@ -20,6 +20,8 @@ class AuthController extends Controller
             $request->session()->regenerate();
             return redirect()->route('admin.attendance_list');
         }
-        return back();
+        return back()->withErrors([
+            'email' => 'ログイン情報が登録されていません',
+        ]);
     }
 }

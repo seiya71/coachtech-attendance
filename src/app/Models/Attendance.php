@@ -53,13 +53,36 @@ class Attendance extends Model
 
     public function getBreakTimeFormattedAttribute()
     {
-        $minutes = $this->breakTimes?->sum('duration') ?? 0;
+        $minutes = $this->breakTimes->reduce(function ($total, $break) {
+            if ($break->start_time && $break->end_time) {
+                $total += \Carbon\Carbon::parse($break->end_time)
+                    ->diffInMinutes(\Carbon\Carbon::parse($break->start_time));
+            }
+            return $total;
+        }, 0);
+
         return sprintf('%02d:%02d', floor($minutes / 60), $minutes % 60);
     }
 
     public function getWorkTimeFormattedAttribute()
     {
-        $minutes = $this->work_time ?? 0;
-        return sprintf('%02d:%02d', floor($minutes / 60), $minutes % 60);
+        if (!$this->clock_in || !$this->clock_out) {
+            return '00:00';
+        }
+
+        $workMinutes = \Carbon\Carbon::parse($this->clock_out)
+            ->diffInMinutes(\Carbon\Carbon::parse($this->clock_in));
+
+        $breakMinutes = $this->breakTimes->reduce(function ($total, $break) {
+            if ($break->start_time && $break->end_time) {
+                $total += \Carbon\Carbon::parse($break->end_time)
+                    ->diffInMinutes(\Carbon\Carbon::parse($break->start_time));
+            }
+            return $total;
+        }, 0);
+
+        $netMinutes = max(0, $workMinutes - $breakMinutes);
+
+        return sprintf('%02d:%02d', floor($netMinutes / 60), $netMinutes % 60);
     }
 }
