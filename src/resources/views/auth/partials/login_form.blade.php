@@ -22,7 +22,7 @@
         <button class="login-button" type="submit">{{ $button }}</button>
 
         @isset($showRegister)
-            <a class="register-link" href="{{ route('register') }}">会員登録はこちら</a>
+            <a class="register-link" href="/register">会員登録はこちら</a>
         @endisset
     </form>
 </div>
