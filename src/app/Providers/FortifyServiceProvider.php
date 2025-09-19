@@ -51,16 +51,18 @@ class FortifyServiceProvider extends ServiceProvider
         config([
             'fortify.features' => array_unique(array_filter([
                 Features::emailVerification(),
-                
             ]))
         ]);
         VerifyEmail::toMailUsing(function ($notifiable, string $url) {
             return (new MailMessage)
-                ->subject('【' . config('app.name') . '】メールアドレスの確認')
-                ->greeting($notifiable->name . ' さん、ようこそ！')
-                ->line('アカウントを有効化するには、下のボタンをクリックしてください。')
-                ->action('メールアドレスを認証', $url)
-                ->line('このリンクは一定時間で失効します。心当たりがない場合は破棄してください。');
+                ->subject('【' . config('app.name') . '】ユーザー登録を完了してください')
+                ->greeting($notifiable->name . '様')
+                ->line('勤怠管理アプリへのご登録、誠にありがとうございます。')
+                ->line('下記のボタンをクリックし、メールアドレスの認証をお願いいたします。')
+                ->action('メールアドレスを認証する', $url)
+                ->line('この認証が完了すると、システムの全機能をご利用いただけます。')
+                ->line('※リンクの有効期限は60分間です。')
+                ->line('※本メールにお心当たりがない場合は、破棄していただければ結構です。');
         });
     }
 }
