@@ -19,40 +19,11 @@ class AttendanceController extends Controller
         $now = AttendanceService::todayJst();
         return $now->format('Y年n月j日') . '(' . $day[$now->dayOfWeek] . ')';
     }
-    private function statusCheck($userId): array
-    {
-        $today = AttendanceService::todayJst();
-
-        $attendance = Attendance::with('breakTimes')
-            ->where('user_id', $userId)
-            ->whereDate('date', $today)
-            ->latest('id')
-            ->first();
-
-        if (!$attendance) {
-            return ['status' => '勤務外', 'attendance' => null, 'break' => null];
-        }
-
-        if ($attendance->clock_out !== null) {
-            return ['status' => '退勤済', 'attendance' => $attendance, 'break' => null];
-        }
-
-        $openBreak = $attendance->breakTimes()
-            ->whereNull('end_time')
-            ->latest('start_time')
-            ->first();
-
-        if ($openBreak) {
-            return ['status' => '休憩中', 'attendance' => $attendance, 'break' => $openBreak];
-        }
-
-        return ['status' => '勤務中', 'attendance' => $attendance, 'break' => null];
-    }
 
     public function clockIn(Request $request)
     {
         $userId = $request->user()->id;
-        $status = $this->statusCheck($userId)['status'];
+        $status = AttendanceService::statusCheck($userId)['status'];
 
         if ($status !== '勤務外') {
             return back();
@@ -70,7 +41,7 @@ class AttendanceController extends Controller
     public function clockOut(Request $request)
     {
         $userId = $request->user()->id;
-        $data = $this->statusCheck($userId);
+        $data = AttendanceService::statusCheck($userId);
 
         if ($data['status'] === '退勤済') {
             return back();
@@ -90,7 +61,7 @@ class AttendanceController extends Controller
     public function startBreak(Request $request)
     {
         $user = $request->user();
-        $statusInfo = $this->statusCheck($user->id);
+        $statusInfo = AttendanceService::statusCheck($user->id);
 
         if ($statusInfo['status'] !== '勤務中') {
             return back();
@@ -110,7 +81,7 @@ class AttendanceController extends Controller
     public function finishBreak(Request $request)
     {
         $user = $request->user();
-        $statusInfo = $this->statusCheck($user->id);
+        $statusInfo = AttendanceService::statusCheck($user->id);
 
         if ($statusInfo['status'] !== '休憩中') {
             return back();
@@ -127,7 +98,7 @@ class AttendanceController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $statusInfo = $this->statusCheck($user->id);
+        $statusInfo = AttendanceService::statusCheck($user->id);
         $now = AttendanceService::todayJst();
 
         return view('attendance', [

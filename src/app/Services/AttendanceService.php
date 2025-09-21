@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\Attendance;
 
 class AttendanceService
 {
@@ -46,5 +47,35 @@ class AttendanceService
         }
 
         return self::shiftMonth($base, $request->query('direction', 'current'));
+    }
+
+    public static function statusCheck(int $userId): array
+    {
+        $today = self::todayJst();
+
+        $attendance = Attendance::with('breakTimes')
+            ->where('user_id', $userId)
+            ->whereDate('date', $today)
+            ->latest('id')
+            ->first();
+
+        if (!$attendance) {
+            return ['status' => '勤務外', 'attendance' => null, 'break' => null];
+        }
+
+        if ($attendance->clock_out !== null) {
+            return ['status' => '退勤済', 'attendance' => $attendance, 'break' => null];
+        }
+
+        $openBreak = $attendance->breakTimes()
+            ->whereNull('end_time')
+            ->latest('start_time')
+            ->first();
+
+        if ($openBreak) {
+            return ['status' => '休憩中', 'attendance' => $attendance, 'break' => $openBreak];
+        }
+
+        return ['status' => '勤務中', 'attendance' => $attendance, 'break' => null];
     }
 }
