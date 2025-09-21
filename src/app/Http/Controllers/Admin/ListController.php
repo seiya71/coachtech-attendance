@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Attendance;
 use App\Models\User;
+use App\Services\AttendanceService;
 
 class ListController extends Controller
 {
@@ -17,23 +18,9 @@ class ListController extends Controller
             ->get();
     }
 
-    private function resolveDate(?string $date, ?string $direction): string
-    {
-        $currentDate = $date ?? today()->toDateString();
-        $carbon = Carbon::parse($currentDate);
-
-        if ($direction === 'next') {
-            return $carbon->addDay()->toDateString();
-        } elseif ($direction === 'prev') {
-            return $carbon->subDay()->toDateString();
-        }
-
-        return $carbon->toDateString();
-    }
-
     public function index(Request $request)
     {
-        $currentDate = $this->resolveDate(
+        $currentDate = AttendanceService::resolveDate(
             $request->input('date'),
             $request->input('direction')
         );
@@ -176,22 +163,11 @@ class ListController extends Controller
         return $results;
     }
 
-
-    private function resolveMonth(Request $request): Carbon
-    {
-        $monthParam = $request->query('month');
-
-        if ($monthParam && preg_match('/^\d{4}-\d{2}$/', $monthParam)) {
-            return Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
-        }
-
-        return now('Asia/Tokyo')->startOfMonth();
-    }
     public function staffAttendanceList(Request $request, int $userId)
     {
         $user = User::findOrFail($userId);
 
-        $currentMonth = $this->resolveMonth($request);
+        $currentMonth = AttendanceService::resolveMonth($request);
 
         $attendanceList = $this->getMonthlyAttendanceList($user->id, $currentMonth);
 
@@ -199,8 +175,8 @@ class ListController extends Controller
             'user' => $user,
             'attendanceList' => $attendanceList,
             'currentMonth' => $currentMonth,
-            'prevMonth' => $currentMonth->copy()->subMonth(),
-            'nextMonth' => $currentMonth->copy()->addMonth(),
+            'prevMonth' => AttendanceService::shiftMonth($currentMonth, 'prev'),
+            'nextMonth' => AttendanceService::shiftMonth($currentMonth, 'next'),
         ]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class AttendanceService
 {
@@ -11,29 +12,39 @@ class AttendanceService
         return now('Asia/Tokyo');
     }
 
-    private function resolveDate(?string $date, ?string $direction): string
+    public static function shiftDay(Carbon $base, string $direction): Carbon
     {
-        $currentDate = $date ?? today()->toDateString();
-        $carbon = Carbon::parse($currentDate);
-
-        if ($direction === 'next') {
-            return $carbon->addDay()->toDateString();
-        } elseif ($direction === 'prev') {
-            return $carbon->subDay()->toDateString();
-        }
-
-        return $carbon->toDateString();
+        return match ($direction) {
+            'prev' => $base->copy()->subDay(),
+            'next' => $base->copy()->addDay(),
+            default => $base,
+        };
     }
 
-    private function resolveMonth(Request $request): Carbon
+    public static function shiftMonth(Carbon $base, string $direction): Carbon
+    {
+        return match ($direction) {
+            'prev' => $base->copy()->subMonth()->startOfMonth(),
+            'next' => $base->copy()->addMonth()->startOfMonth(),
+            default => $base->copy()->startOfMonth(),
+        };
+    }
+
+    public static function resolveDate(?string $date, ?string $direction): Carbon
+    {
+        $base = $date ? Carbon::parse($date) : today('Asia/Tokyo');
+        return self::shiftDay($base, $direction ?? 'current');
+    }
+
+    public static function resolveMonth(Request $request): Carbon
     {
         $monthParam = $request->query('month');
+        $base = self::todayJst();
 
         if ($monthParam && preg_match('/^\d{4}-\d{2}$/', $monthParam)) {
-            return Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
+            $base = Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
         }
 
-        return now('Asia/Tokyo')->startOfMonth();
+        return self::shiftMonth($base, $request->query('direction', 'current'));
     }
-
 }
