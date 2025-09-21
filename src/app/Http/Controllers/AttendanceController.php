@@ -9,23 +9,19 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Models\AttendanceApplication;
 use App\Models\AttendanceApplicationItem;
+use App\Services\AttendanceService;
 
 class AttendanceController extends Controller
 {
-    public static function todayJst(): Carbon
-    {
-        return now('Asia/Tokyo');
-    }
-
     public static function todayFormatted(): string
     {
         $day = ['日', '月', '火', '水', '木', '金', '土'];
-        $now = self::todayJst();
+        $now = AttendanceService::todayJst();
         return $now->format('Y年n月j日') . '(' . $day[$now->dayOfWeek] . ')';
     }
     private function statusCheck($userId): array
     {
-        $today = $this->todayJst();
+        $today = AttendanceService::todayJst();
 
         $attendance = Attendance::with('breakTimes')
             ->where('user_id', $userId)
@@ -64,7 +60,7 @@ class AttendanceController extends Controller
 
         Attendance::create([
             'user_id' => $userId,
-            'date' => $this->todayJst(),
+            'date' => AttendanceService::todayJst(),
             'clock_in' => now('Asia/Tokyo'),
         ]);
 
@@ -85,7 +81,7 @@ class AttendanceController extends Controller
         }
 
         $data['attendance']->update([
-            'clock_out' => $this->todayJst(),
+            'clock_out' => AttendanceService::todayJst(),
         ]);
 
         return redirect()->route('attendance.index');
@@ -103,7 +99,7 @@ class AttendanceController extends Controller
         $attendance = $statusInfo['attendance'];
 
         $attendance->breakTimes()->create([
-            'start_time' => $this->todayJst(),
+            'start_time' => AttendanceService::todayJst(),
             'end_time' => null,
         ]);
 
@@ -121,7 +117,7 @@ class AttendanceController extends Controller
         }
 
         $break = $statusInfo['break'];
-        $break->end_time = $this->todayJst();
+        $break->end_time = AttendanceService::todayJst();
         $break->save();
 
         return redirect()
@@ -132,7 +128,7 @@ class AttendanceController extends Controller
     {
         $user = $request->user();
         $statusInfo = $this->statusCheck($user->id);
-        $now = $this->todayJst();
+        $now = AttendanceService::todayJst();
 
         return view('attendance', [
             'status' => $statusInfo['status'],
@@ -219,31 +215,19 @@ class AttendanceController extends Controller
         ];
     }
 
-    private function resolveMonth(Request $request): Carbon
-    {
-        if ($request->has('month')) {
-            try {
-                return Carbon::createFromFormat('Y-m', $request->query('month'))->startOfMonth();
-            } catch (\Exception $e) {
-            }
-        }
-
-        return now('Asia/Tokyo')->startOfMonth();
-    }
-
     public function listIndex(Request $request)
     {
         $user = $request->user();
 
-        $currentMonth = $this->resolveMonth($request);
+        $currentMonth = AttendanceService::resolveMonth($request);
 
         $attendanceList = $this->getMonthlyAttendanceList($user->id, $currentMonth);
 
         return view('attendance_list', [
             'attendanceList' => $attendanceList,
             'currentMonth' => $currentMonth,
-            'prevMonth' => $currentMonth->copy()->subMonth(),
-            'nextMonth' => $currentMonth->copy()->addMonth(),
+            'prevMonth' => AttendanceService::shiftMonth($currentMonth, 'prev'),
+            'nextMonth' => AttendanceService::shiftMonth($currentMonth, 'next'),
         ]);
     }
 
