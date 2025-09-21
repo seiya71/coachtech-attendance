@@ -32,45 +32,25 @@ class ListController extends Controller
 
     public function attendanceDetail(Request $request, $userId, $attendanceId)
     {
-        $attendance = Attendance::with('breakTimes')
-            ->where('user_id', $userId)
-            ->findOrFail($attendanceId);
-
-        $attendance->breaks = $attendance->breakTimes->map(fn($item) => (object) [
-            'start' => $item->start_time,
-            'end' => $item->end_time,
-        ]);
-
-        $attendance->is_editable = true;
+        $attendanceData = AttendanceService::getAdminAttendanceDetailById($userId, $attendanceId);
 
         return view('admin.attendance_detail', [
-            'attendance' => $attendance,
-            'status' => 'attendance',
+            'attendance' => $attendanceData['attendance'],
+            'status' => $attendanceData['status'],
         ]);
     }
+
 
     public function attendanceDetailNew(Request $request, $userId, $date)
     {
-        $targetDate = Carbon::createFromFormat('Y-m-d', $date)->toDateString();
-        $user = User::findOrFail($userId);
-
-        $data = (object) [
-            'id' => null,
-            'user_id' => $userId,
-            'user' => $user,
-            'date' => Carbon::parse($targetDate),
-            'clock_in' => null,
-            'clock_out' => null,
-            'breaks' => collect([]),
-            'reason' => '',
-            'is_editable' => true,
-        ];
+        $attendanceData = AttendanceService::getAdminNewAttendanceDetail($userId, $date);
 
         return view('admin.attendance_detail', [
-            'attendance' => $data,
-            'status' => 'new_entry',
+            'attendance' => $attendanceData['attendance'],
+            'status' => $attendanceData['status'],
         ]);
     }
+
 
     public function staffList()
     {

@@ -5,6 +5,7 @@ namespace App\Services;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Attendance;
+use App\Models\AttendanceApplication;
 
 class AttendanceService
 {
@@ -130,6 +131,160 @@ class AttendanceService
         }
 
         return $results;
+    }
+
+    private static function formatDetail($source, bool $isApplication = false, bool $isEditable = true)
+    {
+        $breaks = $isApplication
+            ? $source->items->map(fn($item) => (object) [
+                'start' => $item->start,
+                'end' => $item->end,
+            ])
+            : $source->breakTimes->map(fn($item) => (object) [
+                'start' => $item->start_time,
+                'end' => $item->end_time,
+            ]);
+
+        $source->setAttribute('breaks', $breaks->toArray());
+        $source->date = Carbon::parse($source->date);
+        $source->setAttribute('is_editable', $isEditable);
+
+        return $source;
+    }
+
+
+    private static function findPendingApplication(int $userId, $date)
+    {
+        return AttendanceApplication::with('items')
+            ->where('user_id', $userId)
+            ->where('date', $date)
+            ->where('status', 'pending')
+            ->first();
+    }
+
+    public static function getAttendanceDetailById($user, $attendanceId): array
+    {
+        $attendance = Attendance::with('breakTimes')->findOrFail($attendanceId);
+
+        $application = self::findPendingApplication($user->id, $attendance->date);
+
+        if ($application) {
+            $data = self::formatDetail($application, true, false);
+            return [
+                'type' => 'application',
+                'user_id' => $application->user_id,
+                'user' => $user,
+                'data' => $data,
+                'status' => 'submitted',
+                'reason' => $application->reason,
+            ];
+        }
+
+        $data = self::formatDetail($attendance, false, true);
+        return [
+            'type' => 'attendance',
+            'user_id' => $attendance->user_id,
+            'user' => $user,
+            'data' => $data,
+            'status' => 'editable',
+            'reason' => '',
+        ];
+    }
+
+    public static function getNewAttendanceDetail($user, $dateKey)
+    {
+        try {
+            $date = Carbon::parse($dateKey)->startOfDay();
+        } catch (\Exception $e) {
+            abort(400, '不正な日付形式です');
+        }
+
+        $application = self::findPendingApplication($user->id, $date);
+        if ($application) {
+            $data = self::formatDetail($application, true, false);
+            return [
+                'type' => 'application',
+                'user_id' => $application->user_id,
+                'user' => $user,
+                'data' => $data,
+                'status' => 'submitted',
+                'reason' => $application->reason,
+            ];
+        }
+
+        return [
+            'type' => 'new_entry',
+            'user_id' => $user->id,
+            'data' => (object) [
+                'id' => null,
+                'user_id' => $user->id,
+                'user' => $user,
+                'date' => $date,
+                'clock_in' => null,
+                'clock_out' => null,
+                'breaks' => [],
+                'reason' => '',
+                'is_editable' => true,
+            ],
+            'status' => 'new_entry',
+        ];
+    }
+
+    public static function getApplicationDetail($user, $applicationId)
+    {
+        $application = AttendanceApplication::with('items')->findOrFail($applicationId);
+        $data = self::formatDetail($application, true, false);
+
+        return [
+            'type' => 'application',
+            'user_id' => $application->user_id,
+            'user' => $user,
+            'data' => $data,
+            'status' => 'submitted',
+            'reason' => $application->reason,
+        ];
+    }
+
+    public static function getAdminAttendanceDetailById(int $userId, int $attendanceId): array
+    {
+        $attendance = Attendance::with('breakTimes')
+            ->where('user_id', $userId)
+            ->findOrFail($attendanceId);
+
+        $data = self::formatDetail($attendance, false, true);
+
+        return [
+            'attendance' => $data,
+            'status' => 'attendance',
+        ];
+    }
+
+    public static function getAdminNewAttendanceDetail(int $userId, string $date): array
+    {
+        try {
+            $targetDate = Carbon::createFromFormat('Y-m-d', $date)->toDateString();
+        } catch (\Exception $e) {
+            abort(400, '不正な日付形式です');
+        }
+
+        $user = User::findOrFail($userId);
+
+        $data = (object) [
+            'id' => null,
+            'user_id' => $userId,
+            'user' => $user,
+            'date' => Carbon::parse($targetDate),
+            'clock_in' => null,
+            'clock_out' => null,
+            'breaks' => collect([]),
+            'reason' => '',
+            'is_editable' => true,
+        ];
+
+        return [
+            'attendance' => $data,
+            'status' => 'new_entry',
+        ];
     }
 
 }

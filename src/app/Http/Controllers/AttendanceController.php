@@ -157,127 +157,22 @@ class AttendanceController extends Controller
 
         switch ($routeName) {
             case 'attendance.detail':
-                $attendance = Attendance::with('breakTimes')
-                    ->where('id', $key)
-                    ->firstOrFail();
-
-                $application = AttendanceApplication::where('user_id', $user->id)
-                    ->where('date', $attendance->date)
-                    ->where('status', 'pending')
-                    ->first();
-
-                if ($application) {
-                    $data = $application->setAttribute('breaks', $application->items->map(function ($item) {
-                        return (object) [
-                            'start' => $item->start,
-                            'end' => $item->end,
-                        ];
-                    })->toArray());
-                    $data->date = Carbon::parse($data->date);
-                    $data->setAttribute('is_editable', false);
-
-                    return [
-                        'type' => 'application',
-                        'user_id' => $application->user_id,
-                        'user' => $user,
-                        'data' => $data,
-                        'status' => 'submitted',
-                        'reason' => $application->reason,
-                    ];
-                }
-
-                $data = $attendance->setAttribute('breaks', $attendance->breakTimes->map(function ($item) {
-                    return (object) [
-                        'start' => $item->start_time,
-                        'end' => $item->end_time,
-                    ];
-                })->toArray());
-                $data->date = Carbon::parse($data->date);
-                $data->setAttribute('is_editable', true);
-
-                return [
-                    'type' => 'attendance',
-                    'user_id' => $attendance->user_id,
-                    'user' => $user,
-                    'data' => $data,
-                    'status' => 'editable',
-                    'reason' => '',
-                ];
+                $attendanceData = AttendanceService::getAttendanceDetailById($user, $key);
+                break;
 
             case 'attendance.new':
-                try {
-                    $date = Carbon::parse($key)->startOfDay();
-                } catch (\Exception $e) {
-                    abort(400, '不正な日付形式です');
-                }
-
-                $application = AttendanceApplication::where('user_id', $user->id)
-                    ->where('date', $date)
-                    ->where('status', 'pending')
-                    ->first();
-
-                if ($application) {
-                    $data = $application->setAttribute('breaks', $application->items->map(function ($item) {
-                        return (object) [
-                            'start' => $item->start,
-                            'end' => $item->end,
-                        ];
-                    })->toArray());
-                    $data->date = Carbon::parse($data->date);
-                    $data->setAttribute('is_editable', false);
-
-                    return [
-                        'type' => 'application',
-                        'user_id' => $application->user_id,
-                        'user' => $user,
-                        'data' => $data,
-                        'status' => 'submitted',
-                        'reason' => $application->reason,
-                    ];
-                }
-
-                return [
-                    'type' => 'new_entry',
-                    'user_id' => $user->id,
-                    'data' => (object) [
-                        'id' => null,
-                        'user_id' => $user->id,
-                        'user' => $user,
-                        'date' => $date,
-                        'clock_in' => null,
-                        'clock_out' => null,
-                        'breaks' => [],
-                        'reason' => '',
-                        'is_editable' => true,
-                    ],
-                    'status' => 'new_entry',
-                ];
+                $attendanceData = AttendanceService::getNewAttendanceDetail($user, $key);
+                break;
 
             case 'attendance.application':
-                $application = AttendanceApplication::with('items')
-                    ->where('id', $key)
-                    ->firstOrFail();
-                $data = $application->setAttribute('breaks', $application->items->map(function ($item) {
-                    return (object) [
-                        'start' => $item->start,
-                        'end' => $item->end,
-                    ];
-                })->toArray());
-                $data->date = Carbon::parse($data->date);
-                $data->setAttribute('is_editable', false);
-
-                return [
-                    'type' => 'application',
-                    'user_id' => $application->user_id,
-                    'user' => $user,
-                    'data' => $data,
-                    'status' => 'submitted',
-                    'reason' => $application->reason,
-                ];
+                $attendanceData = AttendanceService::getApplicationDetail($user, $key);
+                break;
 
             default:
                 abort(404);
         }
+
+        return $attendanceData;
     }
 
 
