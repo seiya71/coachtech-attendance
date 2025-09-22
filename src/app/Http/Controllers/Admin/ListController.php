@@ -40,7 +40,6 @@ class ListController extends Controller
         ]);
     }
 
-
     public function attendanceDetailNew(Request $request, $userId, $date)
     {
         $attendanceData = AttendanceService::getAdminNewAttendanceDetail($userId, $date);
@@ -51,29 +50,11 @@ class ListController extends Controller
         ]);
     }
 
-
     public function staffList()
     {
         $staffs = User::all(['id', 'name', 'email', 'role']);
 
         return view('admin.staff_list', compact('staffs'));
-    }
-    private function normalizeTime($value): ?Carbon
-    {
-        if (!$value)
-            return null;
-        if ($value instanceof Carbon)
-            return $value;
-
-        if (is_string($value)) {
-            foreach (['H:i:s', 'H:i'] as $fmt) {
-                try {
-                    return Carbon::createFromFormat($fmt, $value);
-                } catch (\Exception $e) {
-                }
-            }
-        }
-        return null;
     }
 
     public function staffAttendanceList(Request $request, int $userId)

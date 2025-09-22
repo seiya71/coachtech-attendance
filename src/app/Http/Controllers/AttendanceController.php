@@ -23,16 +23,16 @@ class AttendanceController extends Controller
     public function clockIn(Request $request)
     {
         $userId = $request->user()->id;
-        $status = AttendanceService::statusCheck($userId)['status'];
+        $statusInfo = AttendanceService::statusCheck($userId);
 
-        if ($status !== '勤務外') {
+        if (!AttendanceService::canClockIn($statusInfo)) {
             return back();
         }
 
         Attendance::create([
             'user_id' => $userId,
             'date' => AttendanceService::todayJst(),
-            'clock_in' => now('Asia/Tokyo'),
+            'clock_in' => AttendanceService::todayJst(),
         ]);
 
         return redirect()->route('attendance.index');
@@ -41,17 +41,13 @@ class AttendanceController extends Controller
     public function clockOut(Request $request)
     {
         $userId = $request->user()->id;
-        $data = AttendanceService::statusCheck($userId);
+        $statusInfo = AttendanceService::statusCheck($userId);
 
-        if ($data['status'] === '退勤済') {
+        if (!AttendanceService::canClockOut($statusInfo)) {
             return back();
         }
 
-        if ($data['status'] === '休憩中') {
-            return back();
-        }
-
-        $data['attendance']->update([
+        $statusInfo['attendance']->update([
             'clock_out' => AttendanceService::todayJst(),
         ]);
 
@@ -60,39 +56,35 @@ class AttendanceController extends Controller
 
     public function startBreak(Request $request)
     {
-        $user = $request->user();
-        $statusInfo = AttendanceService::statusCheck($user->id);
+        $userId = $request->user()->id;
+        $statusInfo = AttendanceService::statusCheck($userId);
 
-        if ($statusInfo['status'] !== '勤務中') {
+        if (!AttendanceService::canStartBreak($statusInfo)) {
             return back();
         }
 
-        $attendance = $statusInfo['attendance'];
-
-        $attendance->breakTimes()->create([
+        $statusInfo['attendance']->breakTimes()->create([
             'start_time' => AttendanceService::todayJst(),
             'end_time' => null,
         ]);
 
-        return redirect()
-            ->route('attendance.index');
+        return redirect()->route('attendance.index');
     }
 
     public function finishBreak(Request $request)
     {
-        $user = $request->user();
-        $statusInfo = AttendanceService::statusCheck($user->id);
+        $userId = $request->user()->id;
+        $statusInfo = AttendanceService::statusCheck($userId);
 
-        if ($statusInfo['status'] !== '休憩中') {
+        if (!AttendanceService::canFinishBreak($statusInfo)) {
             return back();
         }
 
-        $break = $statusInfo['break'];
-        $break->end_time = AttendanceService::todayJst();
-        $break->save();
+        $statusInfo['break']->update([
+            'end_time' => AttendanceService::todayJst(),
+        ]);
 
-        return redirect()
-            ->route('attendance.index');
+        return redirect()->route('attendance.index');
     }
 
     public function index(Request $request)
@@ -108,31 +100,6 @@ class AttendanceController extends Controller
             'time' => $now->format('H:i'),
             'date' => $this->todayFormatted(),
         ]);
-    }
-
-    private function calculateWorkAndBreakTime(Attendance $attendance): array
-    {
-        $breakMinutes = $attendance->breakTimes->reduce(function ($total, $break) {
-            if ($break->start_time && $break->end_time) {
-                return $total + $break->end_time->diffInMinutes($break->start_time);
-            }
-            return $total;
-        }, 0);
-
-        if ($attendance->clock_in && $attendance->clock_out) {
-            $workMinutes = $attendance->clock_in->diffInMinutes($attendance->clock_out) - $breakMinutes;
-        } else {
-            $workMinutes = null;
-        }
-
-        return [
-            'attendance_id' => $attendance->id,
-            'date' => $attendance->date,
-            'clock_in' => optional($attendance->clock_in)->format('H:i') ?? '',
-            'clock_out' => optional($attendance->clock_out)->format('H:i') ?? '',
-            'break_time' => $breakMinutes ? gmdate('H:i', $breakMinutes * 60) : '',
-            'work_time' => $workMinutes !== null ? gmdate('H:i', $workMinutes * 60) : '',
-        ];
     }
 
     public function listIndex(Request $request)
@@ -174,7 +141,6 @@ class AttendanceController extends Controller
 
         return $attendanceData;
     }
-
 
     public function attendanceDetail(Request $request, $key = null)
     {
