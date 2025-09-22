@@ -287,4 +287,24 @@ class AttendanceService
         ];
     }
 
+    public static function canClockIn(array $statusInfo): bool
+    {
+        return $statusInfo['status'] === '勤務外';
+    }
+
+    public static function canClockOut(array $statusInfo): bool
+    {
+        return $statusInfo['status'] === '勤務中';
+    }
+
+    public static function canStartBreak(array $statusInfo): bool
+    {
+        return $statusInfo['status'] === '勤務中';
+    }
+
+    public static function canFinishBreak(array $statusInfo): bool
+    {
+        return $statusInfo['status'] === '休憩中';
+    }
+
 }
