@@ -307,4 +307,27 @@ class AttendanceService
         return $statusInfo['status'] === '休憩中';
     }
 
+    public static function calculateWorkAndBreakTime(Attendance $attendance): array
+    {
+        $breakMinutes = $attendance->breakTimes->reduce(function ($total, $break) {
+            if ($break->start_time && $break->end_time) {
+                return $total + $break->end_time->diffInMinutes($break->start_time);
+            }
+            return $total;
+        }, 0);
+
+        $workMinutes = null;
+        if ($attendance->clock_in && $attendance->clock_out) {
+            $workMinutes = $attendance->clock_in->diffInMinutes($attendance->clock_out) - $breakMinutes;
+        }
+
+        return [
+            'attendance_id' => $attendance->id,
+            'date' => $attendance->date,
+            'clock_in' => optional($attendance->clock_in)->format('H:i'),
+            'clock_out' => optional($attendance->clock_out)->format('H:i'),
+            'break_time' => $breakMinutes ? gmdate('H:i', $breakMinutes * 60) : '',
+            'work_time' => $workMinutes !== null ? gmdate('H:i', max(0, $workMinutes) * 60) : '',
+        ];
+    }
 }
