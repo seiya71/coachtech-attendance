@@ -3,7 +3,7 @@
 **Dockerビルド**
 1. `git clone git@github.com:seiya71/coachtech-attendance.git`
 2. `cd coachtech-attendance`
-3. `docker-compose up -d --build`
+3. `docker compose up -d --build`
 > *MacのM1・M2チップのPCの場合、`no matching manifest for linux/arm64/v8 in the manifest list entries`のメッセージが表示されビルドができないことがあります。
 エラーが発生する場合は、docker-compose.ymlファイルの「mysql」内に「platform」の項目を追加で記載してください*
 ``` bash
@@ -14,7 +14,7 @@ mysql:
 ```
 
 **Laravel環境構築**
-1. `docker-compose exec php composer install`
+1. `docker compose exec php composer install`
 2. `cp src/.env.example src/.env`
 3. .envに以下の環境変数を追加
 ``` text
@@ -36,29 +36,29 @@ MAIL_FROM_NAME="${APP_NAME}"
 ```
 4. キャッシュをクリア
 ```
-docker-compose exec php php artisan config:clear
-docker-compose exec php php artisan cache:clear
+docker compose exec php php artisan config:clear
+docker compose exec php php artisan cache:clear
 ```
 5. アプリケーションキーの作成
 ``` bash
-docker-compose exec php php artisan key:generate
+docker compose exec php php artisan key:generate
 ```
 6. 権限の調整（エラー防止のため）
 
 Laravelの動作に必要な書き込み権限を付与します：
 
 ```bash
-docker-compose exec php chmod -R 775 storage
-docker-compose exec php chmod -R 775 bootstrap/cache
+docker compose exec php chmod -R 775 storage
+docker compose exec php chmod -R 775 bootstrap/cache
 ```
 
 7. マイグレーションの実行
 ``` bash
-docker-compose exec php php artisan migrate
+docker compose exec php php artisan migrate
 ```
 8. シーディングの実行
 ``` bash
-docker-compose exec php php artisan db:seed
+docker compose exec php php artisan db:seed
 ```
 **テスト環境構築**
 1. `.env.testing.example` を `.env.testing` にコピー
@@ -67,15 +67,15 @@ cp src/.env.testing.example src/.env.testing
 ```
 2.アプリケーションキーの生成
 ```bash
-docker-compose exec php php artisan key:generate --env=testing
+docker compose exec php php artisan key:generate --env=testing
 ```
 3.テスト用データベースのマイグレーション
 ```bash
-docker-compose exec php php artisan migrate --env=testing
+docker compose exec php php artisan migrate --env=testing
 ```
 4.テストの実行（必ずこちらのコマンドでテストを実行してください）
 ```bash
-docker-compose exec php php artisan test --env=testing
+docker compose exec php php artisan test --env=testing
 ```
 ## 使用技術（実行環境）
 * nginx 1.21.1
